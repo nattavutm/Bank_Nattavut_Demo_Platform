@@ -6,7 +6,7 @@ Powered by Bank Nattavut.
 
 ## AI Chat
 
-AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3.2-3b-instruct`. The binding is declared in `wrangler.jsonc`; no model API key is needed. Daily Workers AI free quotas apply. Chat context is stored in browser session storage, capped to five turns. New chat clears this context. This route does not use TrendAI AI Guard.
+AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3.2-3b-instruct`. The binding is declared in `wrangler.jsonc`; no model API key is needed. Daily Workers AI free quotas apply. Chat context is stored in browser session storage, capped to five turns. New chat clears this context. Guard Off calls the model directly. Guard On inspects the request and response with the official US TrendAI AI Guard API. Set `AI_GUARD_API_KEY` as an encrypted Cloudflare Worker secret; never put its value in the repository. The application name sent to TrendAI is `r5r5-demo-platform`. Block decisions replace unsafe content, and service/authentication failures stop the request without bypassing Guard.
 
 `POST /api/chat` accepts bounded user/assistant conversation history, rejects client system prompts, and reports provider/usage errors separately. Deploy through the connected Cloudflare Git build. The Node preview server has no AI binding and cannot run live inference; use a deployed Worker for real responses.
 

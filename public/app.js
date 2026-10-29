@@ -76,8 +76,8 @@ let aiChatGuardEnabled = false;
 let aiChatPending = false, aiChatError = '', aiChatDraft = '', aiChatGeneration = 0, aiChatController;
 function saveAiChat() { try { sessionStorage.setItem('r5r5-live-chat', JSON.stringify(aiChatMessages.slice(-10))); } catch {} }
 function aiChatPage() {
-  const message = (role, content) => '<div class="live-chat-message '+role+'"><div class="live-chat-text">'+escapeHtml(content)+'</div></div>';
-  const transcript = aiChatMessages.map(m => message(m.role,m.content)).join('');
+  const message = (role, content, guard) => '<div class="live-chat-message '+role+'"><div class="live-chat-text">'+escapeHtml(content)+'</div>'+(role==='assistant'&&guard?'<div class="chat-guard-verdict">AI Guard · '+(guard.action==='Block'?'Blocked':'Allowed')+'</div>':'')+'</div>';
+  const transcript = aiChatMessages.map(m => message(m.role,m.content,m.guard)).join('');
   return '<section class="chat-surface '+(aiChatMessages.length||aiChatPending?'has-messages':'')+'"><header class="chat-minimal-header"><h1>AI Chat</h1><div class="chat-header-actions"><button type="button" class="chat-guard-switch" data-ai-guard role="switch" aria-label="AI Guard" aria-checked="'+aiChatGuardEnabled+'" '+(aiChatPending?'disabled':'')+'><span>AI Guard</span><span class="switch-track" aria-hidden="true"><span></span></span><span class="switch-value">'+(aiChatGuardEnabled?'On':'Off')+'</span></button><button type="button" class="button" data-ai-new>'+icon('chat')+'New chat</button></div></header><div class="chat-stage"><div class="live-chat-transcript" aria-live="polite">'+(transcript||(!aiChatPending?'<div class="live-chat-welcome"><h2>How can I help you?</h2></div>':''))+(aiChatPending?message('user',aiChatDraft)+'<div class="loading-bubble" role="status" aria-label="AI is thinking">Thinking</div>':'')+'</div>'+(aiChatError?'<div class="live-chat-error" role="alert">'+escapeHtml(aiChatError)+'</div>':'')+'<form class="chat-composer" id="ai-chat-form"><div class="composer-field"><textarea id="ai-chat-input" aria-label="Your message" placeholder="Ask anything" maxlength="4000" rows="1" '+(aiChatPending?'disabled':'')+'>'+escapeHtml(aiChatDraft)+'</textarea><button class="composer-send" type="submit" aria-label="Send message" '+(aiChatPending?'disabled':'')+'>'+icon('send')+'</button></div></form></div></section>';
 }
 async function sendAiChat() {
@@ -87,17 +87,18 @@ async function sendAiChat() {
   const generation = aiChatGeneration;
   aiChatDraft = prompt; aiChatError = ''; aiChatPending = true;
   aiChatController = new AbortController();
-  const messages = [...aiChatMessages.slice(-10), {role:'user',content:prompt}];
+  const messages = [...aiChatMessages.filter(m=>m.guard?.action!=='Block').slice(-10), {role:'user',content:prompt}];
   render();
   const controller = aiChatController;
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 45000);
   try {
     const response = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages,guard:aiChatGuardEnabled}), signal:aiChatController.signal});
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Unable to send this request. Please try again.');
     if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('No response received. Please try again.');
     if (generation !== aiChatGeneration) return;
-    aiChatMessages = [...messages, {role:'assistant',content:data.reply}].slice(-10);
+    const displayMessages = [...aiChatMessages, {role:'user',content:prompt,...(data.guard?.action==='Block'?{guard:data.guard}:{})}, {role:'assistant',content:data.reply,...(data.guard?{guard:data.guard}:{})}];
+    aiChatMessages = displayMessages.slice(-10);
     aiChatDraft = ''; saveAiChat();
   } catch (error) {
     if (generation !== aiChatGeneration) return;
@@ -111,7 +112,7 @@ root.addEventListener('submit', event => { if(event.target.id==='ai-chat-form'){
 root.addEventListener('input', event => { if(event.target.id==='ai-chat-input') aiChatDraft=event.target.value; });
 root.addEventListener('click', event => {
   const button=event.target.closest('button'); if(!button)return;
-  if(button.hasAttribute('data-ai-guard') && !aiChatPending){aiChatGuardEnabled=!aiChatGuardEnabled;aiChatError=aiChatGuardEnabled?'AI Guard is not connected yet. Turn it off to continue chatting.':'';render();return;}
+  if(button.hasAttribute('data-ai-guard') && !aiChatPending){aiChatGuardEnabled=!aiChatGuardEnabled;aiChatError='';render();return;}
   if(button.hasAttribute('data-ai-new')){ aiChatGeneration++; aiChatController?.abort(); aiChatPending=false; aiChatMessages=[]; aiChatDraft=''; aiChatError=''; saveAiChat(); render(); }
 });
 
