@@ -10,7 +10,7 @@ export async function inspectGuard(env, type, payload, fetcher = fetch) {
   let result;
   try { result = await response.json(); } catch { throw new Error('AI Guard returned an invalid decision. The request was stopped.'); }
   if (!['Allow','Block'].includes(result?.action)) throw new Error('AI Guard returned an invalid decision. The request was stopped.');
-  return {action:result.action,id:typeof result.id==='string'?result.id:undefined};
+  return {action:result.action,id:typeof result.id==='string'?result.id:undefined,reasons:Array.isArray(result.reasons)?result.reasons.filter(reason=>typeof reason==='string').slice(0,10).map(reason=>reason.slice(0,500)):[]};
 }
 
 export default {
@@ -60,7 +60,7 @@ export default {
           catch (error) { return json({error:error.message},503); }
           if (outputDecision.action === 'Block') return json({reply:'This response was blocked by AI Guard.',source:'AI Guard',guard:{...outputDecision,stage:'output'}});
         }
-        return json({ reply: result.response, model: MODEL, source: 'Workers AI', ...(body.guard?{guard:{action:'Allow',stage:'input-and-output',inputId:inputDecision.id,outputId:outputDecision.id}}:{}) });
+        return json({ reply: result.response, model: MODEL, source: 'Workers AI', ...(body.guard?{guard:{action:'Allow',stage:'input-and-output',inputId:inputDecision.id,outputId:outputDecision.id,inputReasons:inputDecision.reasons,outputReasons:outputDecision.reasons}}:{}) });
       } catch (error) {
         if (error.message === 'chat_timeout') return json({ error: 'The model took too long to respond. Please try again.' }, 504);
         if (/quota|rate.?limit|neuron|429/i.test(String(error.message))) return json({ error: 'Workers AI usage or rate limit reached. Please try later or check your Cloudflare AI quota.' }, 429);

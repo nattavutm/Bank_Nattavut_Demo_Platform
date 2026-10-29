@@ -10,13 +10,15 @@ AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3
 
 `POST /api/chat` accepts bounded user/assistant conversation history, rejects client system prompts, and reports provider/usage errors separately. Deploy through the connected Cloudflare Git build. The Node preview server has no AI binding and cannot run live inference; use a deployed Worker for real responses.
 
-## Scanner / Guard status
+## AI Guard comparison
 
-The Scanner and Guard screens remain interactive previews. Their replies, policy decisions, scan findings, and timings are local synthetic fixtures. It does not call an LLM, AI Guard, TMAS, or GitHub Actions. Sample results are labeled in the relevant screens.
+The AI Guard page runs one prompt through two live paths side by side: Guard Off and Guard On. Five editable presets cover everyday banking, prompt injection, jailbreak, synthetic sensitive card data, and harmful content. Select a preset, then send once to compare. Each path gets a fresh conversation with the same model and server-owned system instructions. Model generation is nondeterministic, so responses can differ even when both paths are allowed.
 
-- AI Scanner: target configuration, a sensitive-data-disclosure objective, example findings, and sample report export.
-- AI Guard: Guard off/on comparison, input/output inspection traces, normal banking requests, request history, and JSON export.
-- Minimal two-module navigation, Inter fonts bundled locally, and a responsive light console.
+Only an actual API Block is labeled blocked. An Allow is shown as allowed even if the model refuses the request. Results arrive independently; errors do not hide the other path. View details shows measured client elapsed time, returned Guard reasons, and decision IDs. New comparison cancels pending requests and clears the displayed results. Comparisons are held in page memory and do not change AI Chat history.
+
+## AI Scanner status
+
+The Scanner screen remains an interactive preview with local synthetic scan findings and timings. It does not start TMAS or GitHub Actions. Sample results are labeled in the screen. Live scanning is a future integration.
 
 ## Connect Cloudflare Workers to this repository
 
@@ -32,7 +34,7 @@ Create a Worker using **Import a repository** in Cloudflare Workers & Pages and 
 
 Use the Worker name shown above so it matches `wrangler.jsonc`. The build command checks JavaScript syntax; there is no frontend compilation step. Wrangler publishes the static files from `public/` together with `src/worker.js`.
 
-No LLM or TrendAI secrets are needed to deploy this UI preview. The user connects and deploys the Worker through Cloudflare; pushing this repository alone does not deploy a Worker.
+The static UI can deploy without TrendAI secrets. Live Guard requests require `AI_GUARD_API_KEY`; live inference requires the declared Workers AI binding. With the repository connected to Workers Builds, pushes to main trigger deployment.
 
 Cloudflare build settings: https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
 
@@ -56,16 +58,17 @@ npm run deploy:check
 
 ## Worker behavior
 
-- `GET /api/health` returns the preview mode and unconfigured integration statuses.
-- Other `/api/*` routes return HTTP 503 until live integrations are implemented.
+- `GET /api/health` reports whether the AI binding and Guard secret are configured; it does not test connectivity.
+- `POST /api/chat` handles live chat and Guard comparisons.
+- Other `/api/*` routes return HTTP 503 until those integrations are implemented.
 - Page and asset requests are served through the `ASSETS` binding.
 
 ## Next integrations
 
-1. Connect a model provider and TrendAI AI Guard through server-side adapters.
-2. Add separately authenticated baseline and protected chat endpoints with the same model and banking context.
-3. Add a GitHub Actions workflow to run a pinned TMAS CLI against those endpoints.
-4. Import real scan reports into the existing finding and evidence workflow.
+1. Add separately authenticated scanner target endpoints.
+2. Add a GitHub Actions workflow to run a pinned TMAS CLI against those endpoints.
+3. Import real scan reports into the finding workflow.
+4. Add Gateway and Agentic controls as separate integrations.
 
 Keep API keys in Cloudflare or GitHub Secrets. Local `.env` and `.dev.vars` files are ignored by Git. Future Gateway and Agentic integrations can reuse the banking context and evidence model.
 
