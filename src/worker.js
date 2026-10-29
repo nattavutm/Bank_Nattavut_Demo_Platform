@@ -1,3 +1,4 @@
+import { scannerApi, scannerService } from './scanner.js';
 import { authorize } from './auth.js';
 export const MODEL = '@cf/meta/llama-3.2-3b-instruct';
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -25,6 +26,7 @@ export const app = {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/health') return json({ app: 'r5r5 TrendAI Demo Platform', integrations: { model: env.AI ? 'configured' : 'not-configured', guard: env.AI_GUARD_API_KEY ? 'configured' : 'not-configured', scanner: 'not-configured' }, model: MODEL });
+    if (url.pathname.startsWith('/api/scanner/')) return scannerApi(request,env);
     if (url.pathname === '/api/chat') {
       if (request.method !== 'POST') return json({ error: 'Use POST for chat requests.' }, 405);
       if (request.headers.get('Origin') && request.headers.get('Origin') !== url.origin) return json({ error: 'Cross-origin requests are not allowed.' }, 403);
@@ -82,6 +84,7 @@ export const app = {
 
 // Every request passes authentication, including static application assets.
 export default {async fetch(request,env){
+  const service=await scannerService(request,env,inspectGuard);if(service)return service;
   const auth=await authorize(request,env);if(auth)return auth;
   const response=await app.fetch(request,env);
   const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Frame-Options','DENY');headers.set('X-Content-Type-Options','nosniff');

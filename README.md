@@ -35,7 +35,7 @@ AI Scanner now has two minimal pages, available from the hover/click navigation 
 - **Standard Scan** (`#scanner`): select five objective groups, preview three planned prompts per group, and enter an HTTPS target endpoint.
 - **Agentic Scan** (`#agentic`): select an objective, set a maximum of 3/5/10 attempts, and inspect the objective before execution.
 
-These are configuration interfaces, not an implemented scan runner. Run buttons remain disabled with an explicit connection status. The previous simulated findings and progress playback have been removed. Validate URL checks URL syntax only; it does not contact the endpoint. Target credentials must be configured on the runner. No attacker, target or judge request is sent by these pages.
+The Scanner pages now dispatch real TMAS workflows. See “Live GitHub Actions scanning” below for prerequisites, target approval, retention and limitations.
 
 Live execution still requires a GitHub Actions/TMAS runner, separate service authentication for the target, synthetic target context, attacker/judge credentials and report ingestion. Sensitive-data and hidden-instruction evaluation must verify the seeded values; indirect injection currently previews document text in a request, not a real retrieval pipeline. Custom objective tags and TMAS schema versions must be validated when connecting the runner.
 
@@ -94,3 +94,17 @@ Keep API keys in Cloudflare or GitHub Secrets. Local `.env` and `.dev.vars` file
 ## Fonts
 
 Inter is bundled in `public/fonts/` under the included SIL Open Font License (`public/fonts/OFL.txt`). No external font request is needed.
+
+## Live GitHub Actions scanning
+
+`AI Scanner → Standard Scan` runs the selected fixed prompts (three per objective); `Agentic Scan` uses a TrendAI hosted attacker and judge, bounded by the selected attempts. All nine supported objective categories are available. The server dispatches `.github/workflows/ai-scan.yml` on `main`; Actions downloads checksum-pinned TMAS v2.335.0, executes the scan, and sends status plus the actual JSON report back via scoped HMAC authentication. No simulated findings are generated.
+
+Choose **AI Chat** and toggle **AI Guard** for the built-in Workers AI target. This uses the chat model with additional synthetic records, a hidden marker and an illustrative non-executable tool schema for measurable disclosure probes. It is independent of the user's chat history. Requests pass real input/output AI Guard checks when enabled. Guard errors fail closed. Resource tests remain bounded by the server's 512-token output cap.
+
+Custom targets use a JSON `messages` request and `reply` response. Before running one, an administrator must add its exact HTTPS URL to `SCANNER_ALLOWED_ENDPOINTS` in **both** Worker variables and GitHub repository Actions variables. No built-in service token is sent to custom endpoints. Custom endpoint authentication and alternative response schemas require an adapter. This initial implementation intentionally accepts only explicitly approved targets.
+
+Encrypted Worker Secrets: `SCANNER_GITHUB_TOKEN`, `SCANNER_SERVICE_KEY`. Actions Secrets: `SCANNER_SERVICE_KEY`, `TMAS_API_KEY`. `SCAN_JOBS` KV retains jobs/reports for seven days. GitHub artifacts retain full JSON/HTML reports for seven days. Run logs are subject to repository log retention settings. The GitHub token is currently the owner-approved OAuth credential with `repo/workflow`; a repository-scoped credential is preferable when available.
+
+The workflow uses standard Ubuntu runners, serializes scan execution, and has a 22-minute hard timeout. Each scan requests at most 15 minutes from TMAS. The web report is capped at 1.3 MB; larger reports remain in the Actions artifact. Cancellation and setup failures can be inspected through the Actions link. Progress is job status, not a simulated per-attempt animation. KV is eventually consistent, so report/status propagation can be delayed. The active-job guard is best effort; GitHub concurrency serializes overlapping jobs.
+
+TrendAI Scanner entitlement and hosted attacker/judge availability depend on the tenant. Workers AI free quotas, GitHub artifact storage and KV quotas still apply. No plan upgrades are performed by this setup.

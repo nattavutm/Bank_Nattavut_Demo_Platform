@@ -1,0 +1,42 @@
+name: AI Scanner
+run-name: Scan ${{ inputs.job_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: Scan job created by the demo platform
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: ai-scanner
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install verified TMAS CLI
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --retry 3 https://ast-cli.xdr.trendmicro.com/tmas-cli/latest/tmas-cli_Linux_x86_64.tar.gz -o tmas.tar.gz
+          echo '3bcbeeca157a63a4efa7f89489a46b0045602417e7143bfbbde497a8f8fbe526  tmas.tar.gz' | sha256sum --check
+          tar -xzf tmas.tar.gz tmas
+          chmod +x tmas
+      - name: Run scanner and publish results
+        env:
+          SCAN_JOB_ID: ${{ inputs.job_id }}
+          SCANNER_SERVICE_KEY: ${{ secrets.SCANNER_SERVICE_KEY }}
+          TMAS_API_KEY: ${{ secrets.TMAS_API_KEY }}
+          SCANNER_ALLOWED_ENDPOINTS: ${{ vars.SCANNER_ALLOWED_ENDPOINTS }}
+        run: node scripts/run-scanner.mjs
+      - name: Retain scanner reports for 7 days
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai-scan-${{ inputs.job_id }}
+          path: scan-output/
+          retention-days: 7
+          if-no-files-found: ignore
