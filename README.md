@@ -30,7 +30,14 @@ Validation evidence, product sources, and excluded OWASP risks are recorded in [
 
 ## AI Scanner status
 
-The Scanner screen remains an interactive preview with local synthetic scan findings and timings. It does not start TMAS or GitHub Actions. Sample results are labeled in the screen. Live scanning is a future integration.
+AI Scanner now has two minimal pages, available from the hover/click navigation submenu:
+
+- **Standard Scan** (`#scanner`): select five objective groups, preview three planned prompts per group, and check configuration status.
+- **Agentic Scan** (`#agentic`): select an objective, set a maximum of 3/5/10 attempts, and inspect the objective before execution.
+
+These are configuration interfaces, not an implemented scan runner. Run buttons remain disabled with an explicit connection status. The previous simulated findings and progress playback have been removed. The connection check reads `/api/health`; a configured AI binding is not an inference/connectivity test. No attacker, target or judge request is sent by these pages.
+
+Live execution still requires a GitHub Actions/TMAS runner, separate service authentication for the target, synthetic target context, attacker/judge credentials and report ingestion. Sensitive-data and hidden-instruction evaluation must verify the seeded values; indirect injection currently previews document text in a request, not a real retrieval pipeline. Custom objective tags and TMAS schema versions must be validated when connecting the runner.
 
 ## Connect Cloudflare Workers to this repository
 
