@@ -197,3 +197,22 @@ h1{font-size:28px;line-height:36px;letter-spacing:-.02em;font-weight:600;color:#
 .guard-empty-response .empty-module-icon svg{width:24px;height:24px;stroke-width:1.5;color:inherit}
 .guard-empty-response.protected .empty-module-icon{color:#c52b32;background:#fff7f7;border-color:#f7e2e4}
 @media(max-width:720px){#navigation .nav-link>span.module-nav-icon[data-icon]{width:22px;height:22px}#navigation .module-nav-icon svg{width:20px;height:20px}}
+
+/* OWASP category selection with explicit integration readiness. */
+.security-nav-label{margin-top:27px;margin-bottom:12px}
+.guard-use-cases{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.guard-use-cases button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border-radius:10px;gap:3px;padding:11px 12px;font-size:12px;line-height:17px}
+.guard-category-code{font-size:10px;line-height:14px;letter-spacing:.04em;font-weight:600;color:#667085}
+.guard-use-cases small{font-size:10px;line-height:14px;color:#929aa5;font-weight:400}
+.guard-use-cases button[aria-pressed=true]{background:#fff7f7;border-color:#eabfc2}
+.guard-use-cases button[aria-pressed=true] .guard-category-code{color:#bd252e}
+.guard-variants{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:-8px 0 22px}
+.guard-variants button{border:1px solid #e6e7e9;border-radius:20px;padding:6px 13px;background:#fff;color:#667085;font-size:12px;line-height:20px}
+.guard-variants button[aria-pressed=true]{background:#f1f2f3;color:#344054;border-color:#caced3}
+.guard-setup-note{max-width:840px;margin:0 auto 22px;padding:15px 18px;border:1px solid #e7e9ed;border-radius:10px;background:#fafbfc;font-size:13px;line-height:22px;color:#667085}
+.guard-setup-note strong{font-weight:500;color:#475467}.guard-setup-note p{margin:6px 0}.guard-setup-note>span{font-size:11px;color:#929aa5}
+.guard-footnote a{display:inline-flex;align-items:center;gap:6px}.guard-footnote a svg{width:12px;height:12px;stroke-width:1.5}
+.guard-response h2{font-size:13px}.guard-playground-stage{padding-top:32px;padding-bottom:32px}
+.module-placeholder{min-height:60vh}
+@media(max-width:1050px){.guard-use-cases{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.guard-use-cases{grid-template-columns:repeat(2,minmax(0,1fr))}.security-nav-label{margin-top:16px}.guard-response h2{font-size:13px}}

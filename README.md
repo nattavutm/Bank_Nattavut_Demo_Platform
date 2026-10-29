@@ -1,6 +1,6 @@
 # r5r5 TrendAI Demo Platform
 
-A minimal English-language AI security demo with three modules: **AI Chat**, **AI Scanner**, and **AI Guard**. The example banking application is **r5r5 Bank**.
+A minimal English-language AI security demo with standalone **AI Chat** and an **AI Security** group containing **AI Blueprint**, **AI Risk Insights**, **AI Scanner**, and **AI Guard**. Blueprint and Risk Insights are empty placeholder pages. The example banking application is **r5r5 Bank**.
 
 Powered by Bank Nattavut.
 
@@ -12,7 +12,7 @@ AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3
 
 ## AI Guard comparison
 
-The AI Guard page runs one prompt through two live paths side by side: Guard Off and Guard On. Only live-verified OWASP-mapped examples are exposed as presets. After the user changed policy actions, five examples were verified: LLM01:2026 prompt injection and jailbreak; LLM02:2026 synthetic card data and public AWS example credentials; LLM08:2026 hidden context extraction. They demonstrate input blocking before the model is called, not full category coverage. Everyday banking and unverified attack types are excluded. Select a preset, then send once to compare. Each path gets a fresh conversation with the same model and server-owned system instructions. Model generation is nondeterministic, so responses can differ even when both paths are allowed.
+The AI Guard page runs one prompt through two live paths side by side: Without protection and Protected by TrendAI AI Guard. Its footer opens the US Vision One AI Guard console in a new tab. Only live-verified OWASP-mapped examples are exposed as presets. After the user changed policy actions, five live examples were verified across three risk categories: LLM01:2026 prompt injection and jailbreak; LLM02:2026 synthetic card data and public AWS example credentials; LLM08:2026 hidden context extraction. They demonstrate input blocking before the model is called, not full category coverage. The selector lists all ten OWASP 2026 categories. Seven categories require additional integrations; selecting one explains the missing test path and disables comparison instead of submitting a misleading chat-only test. The five verified examples remain available as variants under LLM01, LLM02, and LLM08. Select a preset, then send once to compare. Each path gets a fresh conversation with the same model and server-owned system instructions. Model generation is nondeterministic, so responses can differ even when both paths are allowed.
 
 An API Block is labeled blocked. The observed HTTP 403 `SensitiveDataDetected` denial is also enforced and labeled separately as Blocked by TrendAI API; generic 401/403 responses remain configuration errors. An Allow is shown as allowed even if the model refuses the request. Results arrive independently; errors do not hide the other path. View details shows measured client elapsed time, returned Guard reasons, and decision IDs. New comparison cancels pending browser requests and clears the displayed results; already-started upstream processing may still finish. Comparisons are held in page memory and do not change AI Chat history.
 
