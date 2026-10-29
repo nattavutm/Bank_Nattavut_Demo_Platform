@@ -233,3 +233,10 @@ window.addEventListener('hashchange',setPage);
 hydrateIcons();setPage();
 
 root.addEventListener('keydown',event=>{if(event.target.id==='ai-chat-input' && event.key==='Enter' && !event.shiftKey && !event.isComposing){event.preventDefault();sendAiChat();}});
+
+// Expired sessions return to the password screen; no credentials live in browser storage.
+const appFetch=window.fetch.bind(window);
+window.fetch=async(...args)=>{const response=await appFetch(...args);if(response.status===401){location.replace('/login'+location.hash);}return response;};
+document.getElementById('sign-out')?.addEventListener('click',async()=>{
+  try{const response=await appFetch('/api/logout',{method:'POST'});if(!response.ok)throw new Error();sessionStorage.removeItem('r5r5-live-chat');location.replace('/login');}catch{toast('Unable to sign out. Please try again.');}
+});

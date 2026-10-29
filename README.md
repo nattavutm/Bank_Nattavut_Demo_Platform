@@ -4,6 +4,16 @@ A minimal English-language AI security demo with standalone **AI Chat** and an *
 
 Powered by Bank Nattavut.
 
+## Password sign-in
+
+The application and all API routes require a server-verified session. The public `/login` screen has a single password field. Its visual assets are explicitly allowlisted, including protection against missing-asset SPA fallbacks. `APP_AUTH_SECRET` is a Cloudflare Worker secret containing a shared demo password and a random signing key; its value must never be committed or placed in browser JavaScript.
+
+Login compares credentials using Web Crypto HMAC verification, then issues an eight-hour host-bound HMAC-signed `__Host-` cookie with Secure, HttpOnly, SameSite=Lax, and Path=/. The password is not in the cookie or browser storage. Login/logout require an exact same-origin POST. Invalid login attempts have a best-effort per-IP throttle within each isolate (not a global distributed rate limit). Missing configuration fails closed.
+
+Sign out clears the browser cookie and chat history. Sessions are stateless; a copied valid cookie remains valid until expiry. Rotate the secret with a new signing key to invalidate all sessions. This is a shared-password demo gate, not individual user identity or enterprise SSO.
+
+The Worker runs before static assets for every route so direct navigation and API calls cannot bypass login. The Node preview remains a static UI preview; `/login.html` previews the appearance but does not authenticate. Use a deployed Worker for actual authentication.
+
 ## AI Chat
 
 AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3.2-3b-instruct`. The binding is declared in `wrangler.jsonc`; no model API key is needed. Daily Workers AI free quotas apply. Chat context is stored in browser session storage, capped to five turns. New chat clears this context. Guard Off calls the model directly. Guard On inspects the request and response with the official US TrendAI AI Guard API. Set `AI_GUARD_API_KEY` as an encrypted Cloudflare Worker secret; never put its value in the repository. The application name sent to TrendAI is `r5r5-demo-platform`. Block decisions replace unsafe content, and service/authentication failures stop the request without bypassing Guard.

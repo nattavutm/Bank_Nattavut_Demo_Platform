@@ -1,3 +1,4 @@
+import { authorize } from './auth.js';
 export const MODEL = '@cf/meta/llama-3.2-3b-instruct';
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 export const GUARD_URL = 'https://api.xdr.trendmicro.com/v3.0/aiSecurity/applyGuardrails';
@@ -20,7 +21,7 @@ export async function inspectGuard(env, type, payload, fetcher = fetch) {
   return {action:result.action,id:typeof result.id==='string'?result.id:undefined,reasons:Array.isArray(result.reasons)?result.reasons.filter(reason=>typeof reason==='string').slice(0,10).map(reason=>reason.slice(0,500)):[]};
 }
 
-export default {
+export const app = {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/health') return json({ app: 'r5r5 TrendAI Demo Platform', integrations: { model: env.AI ? 'configured' : 'not-configured', guard: env.AI_GUARD_API_KEY ? 'configured' : 'not-configured', scanner: 'not-configured' }, model: MODEL });
@@ -78,3 +79,11 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+// Every request passes authentication, including static application assets.
+export default {async fetch(request,env){
+  const auth=await authorize(request,env);if(auth)return auth;
+  const response=await app.fetch(request,env);
+  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Frame-Options','DENY');headers.set('X-Content-Type-Options','nosniff');
+  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+}};

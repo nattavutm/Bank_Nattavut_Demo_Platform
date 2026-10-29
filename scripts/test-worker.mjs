@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { MODEL } from '../src/worker.js';
+import { app as worker, MODEL } from '../src/worker.js';
 const request = messages => new Request('https://demo.test/api/chat', { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages}) });
 test('real model call preserves follow-up context and adds server-owned system prompt', async () => {
   const messages=[{role:'user',content:'My name is Alex.'},{role:'assistant',content:'Hello Alex.'},{role:'user',content:'What is my name?'}];
