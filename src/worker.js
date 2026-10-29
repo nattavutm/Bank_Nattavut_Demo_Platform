@@ -25,7 +25,7 @@ export async function inspectGuard(env, type, payload, fetcher = fetch) {
 export const app = {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/health') return json({ app: 'r5r5 TrendAI Demo Platform', integrations: { model: env.AI ? 'configured' : 'not-configured', guard: env.AI_GUARD_API_KEY ? 'configured' : 'not-configured', scanner: 'not-configured' }, model: MODEL });
+    if (url.pathname === '/api/health') return json({ app: 'r5r5 TrendAI Demo Platform', integrations: { model: env.AI ? 'configured' : 'not-configured', guard: env.AI_GUARD_API_KEY ? 'configured' : 'not-configured', scanner: env.SCAN_JOBS&&env.SCANNER_GITHUB_TOKEN&&env.SCANNER_SERVICE_KEY?'configured':'not-configured' }, model: MODEL });
     if (url.pathname.startsWith('/api/scanner/')) return scannerApi(request,env);
     if (url.pathname === '/api/chat') {
       if (request.method !== 'POST') return json({ error: 'Use POST for chat requests.' }, 405);

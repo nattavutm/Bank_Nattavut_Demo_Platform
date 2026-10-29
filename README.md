@@ -32,12 +32,12 @@ Validation evidence, product sources, and excluded OWASP risks are recorded in [
 
 AI Scanner now has two minimal pages, available from the hover/click navigation submenu:
 
-- **Standard Scan** (`#scanner`): select five objective groups, preview three planned prompts per group, and enter an HTTPS target endpoint.
-- **Agentic Scan** (`#agentic`): select an objective, set a maximum of 3/5/10 attempts, and inspect the objective before execution.
+- **Standard Scan** (`#scanner`): select nine objective groups, preview three prompts per group, and enter an HTTPS target endpoint.
+- **Agentic Scan** (`#agentic`): select an objective, set a maximum of 3/5/10 attempts, and start adaptive testing.
 
 The Scanner pages now dispatch real TMAS workflows. See “Live GitHub Actions scanning” below for prerequisites, target approval, retention and limitations.
 
-Live execution still requires a GitHub Actions/TMAS runner, separate service authentication for the target, synthetic target context, attacker/judge credentials and report ingestion. Sensitive-data and hidden-instruction evaluation must verify the seeded values; indirect injection currently previews document text in a request, not a real retrieval pipeline. Custom objective tags and TMAS schema versions must be validated when connecting the runner.
+Live execution uses the configured runner and scoped service endpoints. Sensitive-data and hidden-instruction tests use seeded synthetic context. Indirect injection passes untrusted document text in a request; it does not mutate a retrieval pipeline.
 
 ## Connect Cloudflare Workers to this repository
 
@@ -79,15 +79,12 @@ npm run deploy:check
 
 - `GET /api/health` reports whether the AI binding and Guard secret are configured; it does not test connectivity.
 - `POST /api/chat` handles live chat and Guard comparisons.
-- Other `/api/*` routes return HTTP 503 until those integrations are implemented.
+- `/api/scanner/*` handles workflow dispatch, job status, reports and scoped runner access.
 - Page and asset requests are served through the `ASSETS` binding.
 
-## Next integrations
+## Future integrations
 
-1. Add separately authenticated scanner target endpoints.
-2. Add a GitHub Actions workflow to run a pinned TMAS CLI against those endpoints.
-3. Import real scan reports into the finding workflow.
-4. Add Gateway and Agentic controls as separate integrations.
+Add Gateway controls and authenticated adapters for additional customer endpoints as needed.
 
 Keep API keys in Cloudflare or GitHub Secrets. Local `.env` and `.dev.vars` files are ignored by Git. Future Gateway and Agentic integrations can reuse the banking context and evidence model.
 
@@ -108,3 +105,7 @@ Encrypted Worker Secrets: `SCANNER_GITHUB_TOKEN`, `SCANNER_SERVICE_KEY`. Actions
 The workflow uses standard Ubuntu runners, serializes scan execution, and has a 22-minute hard timeout. Each scan requests at most 15 minutes from TMAS. The web report is capped at 1.3 MB; larger reports remain in the Actions artifact. Cancellation and setup failures can be inspected through the Actions link. Progress is job status, not a simulated per-attempt animation. KV is eventually consistent, so report/status propagation can be delayed. The active-job guard is best effort; GitHub concurrency serializes overlapping jobs.
 
 TrendAI Scanner entitlement and hosted attacker/judge availability depend on the tenant. Workers AI free quotas, GitHub artifact storage and KV quotas still apply. No plan upgrades are performed by this setup.
+
+## Integration verification
+
+Live Standard Scan: GitHub Actions run `40883089559`, three Sensitive Data Disclosure tests, completed successfully with two judge findings and one refusal. Live Agentic Scan: run `40883591334`, three attempts with AI Guard enabled, completed successfully; all three target requests were blocked by AI Guard at input inspection. These observations describe those specific runs, not universal protection coverage. Automated authentication, dispatch, target-validation and report-lifecycle checks: 30 passing tests.
