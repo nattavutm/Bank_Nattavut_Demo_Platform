@@ -7,3 +7,5 @@ Downloaded unchanged from Trend Micro’s official website on 29 October 2026.
 
 Source page: https://www.trendmicro.com/en_gb/business.html
 Brand marks remain the property of Trend Micro Incorporated.
+
+`trendai-symbol.svg` embeds the unmodified official PNG and uses an SVG viewport to show only its existing red symbol. Used for navigation, empty states, and favicon; no symbol was redrawn.

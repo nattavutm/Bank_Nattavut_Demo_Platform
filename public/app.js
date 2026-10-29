@@ -67,7 +67,7 @@ const guardPending=()=>guardRun&&Object.values(guardRun.results).some(result=>re
 function guardResult(side) {
   const protectedPath=side==='on';
   const result=guardRun?.results[side];
-  let body='<div class="guard-empty-response">'+icon(protectedPath?'shield':'chat')+'<span>'+(protectedPath?'With AI Guard':'Without inspection')+'</span></div>';
+  let body='<div class="guard-empty-response"><img class="trendai-symbol" src="/brand/trendai-symbol.svg" alt="" width="40" height="36">'+'<span>'+(protectedPath?'With AI Guard':'Without inspection')+'</span></div>';
   if(result?.status==='pending') body='<div class="guard-waiting" role="status">'+(protectedPath?'Inspecting and responding…':'Waiting for the model…')+'</div>';
   if(result?.status==='error') body='<div class="guard-result-label error">Request stopped</div><div class="guard-response-error" role="alert">'+escapeHtml(result.error)+'</div>';
   if(result?.status==='done') {
