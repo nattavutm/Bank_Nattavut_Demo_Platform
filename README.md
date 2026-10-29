@@ -12,9 +12,11 @@ AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3
 
 ## AI Guard comparison
 
-The AI Guard page runs one prompt through two live paths side by side: Guard Off and Guard On. Five editable presets cover everyday banking, prompt injection, jailbreak, synthetic sensitive card data, and harmful content. Select a preset, then send once to compare. Each path gets a fresh conversation with the same model and server-owned system instructions. Model generation is nondeterministic, so responses can differ even when both paths are allowed.
+The AI Guard page runs one prompt through two live paths side by side: Guard Off and Guard On. Only live-verified OWASP-mapped examples are exposed as presets. Currently this is one LLM02:2026 sensitive-data example using a synthetic test card; it demonstrates blocking the prompt before it reaches the model, not full category coverage. Everyday banking and the unverified attack presets are excluded. Select a preset, then send once to compare. Each path gets a fresh conversation with the same model and server-owned system instructions. Model generation is nondeterministic, so responses can differ even when both paths are allowed.
 
-Only an actual API Block is labeled blocked. An Allow is shown as allowed even if the model refuses the request. Results arrive independently; errors do not hide the other path. View details shows measured client elapsed time, returned Guard reasons, and decision IDs. New comparison cancels pending requests and clears the displayed results. Comparisons are held in page memory and do not change AI Chat history.
+An API Block is labeled blocked. The observed HTTP 403 `SensitiveDataDetected` denial is also enforced and labeled separately as Blocked by TrendAI API; generic 401/403 responses remain configuration errors. An Allow is shown as allowed even if the model refuses the request. Results arrive independently; errors do not hide the other path. View details shows measured client elapsed time, returned Guard reasons, and decision IDs. New comparison cancels pending browser requests and clears the displayed results; already-started upstream processing may still finish. Comparisons are held in page memory and do not change AI Chat history.
+
+Validation evidence, product sources, and excluded OWASP risks are recorded in [docs/guard-validation.md](docs/guard-validation.md).
 
 ## AI Scanner status
 

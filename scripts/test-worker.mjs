@@ -25,3 +25,19 @@ test('Guard-on checks input and output before returning a model answer',async(t)
 test('Guard input block stops the model call',async(t)=>{t.mock.method(globalThis,'fetch',async()=>Response.json({action:'Block',id:'input-decision',reasons:['Prompt attack detected']}));let called=false;const req=new Request('https://demo.test/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guard:true,messages:[{role:'user',content:'Test attack'}]})});const r=await worker.fetch(req,{AI_GUARD_API_KEY:'unit-test-only',AI:{run:async()=>{called=true;return {response:'Must not run'};}}});assert.equal(called,false);const body=await r.json();assert.equal(body.guard.stage,'input');assert.deepEqual(body.guard.reasons,['Prompt attack detected']);assert.equal(body.guard.id,'input-decision');});
 test('Guard output block does not disclose the model output',async(t)=>{let count=0;t.mock.method(globalThis,'fetch',async()=>Response.json({action:++count===1?'Allow':'Block'}));const req=new Request('https://demo.test/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guard:true,messages:[{role:'user',content:'Test request'}]})});const r=await worker.fetch(req,{AI_GUARD_API_KEY:'unit-test-only',AI:{run:async()=>({response:'SYNTHETIC-SECRET-OUTPUT'})}});const body=await r.json();assert.equal(body.guard.stage,'output');assert.equal(JSON.stringify(body).includes('SYNTHETIC-SECRET-OUTPUT'),false);});
 test('Guard API failures and unknown decisions stop the request',async(t)=>{for(const fixture of [()=>new Response('',{status:403}),()=>Response.json({action:'Unexpected'})]){const mock=t.mock.method(globalThis,'fetch',async()=>fixture());let called=false;const req=new Request('https://demo.test/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guard:true,messages:[{role:'user',content:'Hello'}]})});const r=await worker.fetch(req,{AI_GUARD_API_KEY:'unit-test-only',AI:{run:async()=>{called=true;return {response:'Must not run'};}}});assert.equal(r.status,503);assert.equal(called,false);mock.mock.restore();}});
+
+test('explicit sensitive-data denial is enforced separately from generic HTTP 403',async(t)=>{
+  for(const stage of ['input','output']) {
+    let calls=0,modelCalls=0;
+    const mock=t.mock.method(globalThis,'fetch',async()=>{
+      calls++;
+      if(stage==='output'&&calls===1)return Response.json({action:'Allow'});
+      return Response.json({error:{code:'SensitiveDataDetected',message:'credit card detected'}},{status:403});
+    });
+    const req=new Request('https://demo.test/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guard:true,messages:[{role:'user',content:'Synthetic card test'}]})});
+    const response=await worker.fetch(req,{AI_GUARD_API_KEY:'unit-test-only',AI:{run:async()=>{modelCalls++;return {response:'SYNTHETIC-OUTPUT-NOT-TO-RELEASE'};}}});
+    const body=await response.json();
+    assert.equal(response.status,200);assert.equal(body.source,'TrendAI API');assert.equal(body.guard.action,'Block');assert.equal(body.guard.stage,stage);assert.equal(body.guard.code,'SensitiveDataDetected');assert.deepEqual(body.guard.reasons,['credit card detected']);assert.equal(modelCalls,stage==='input'?0:1);assert.equal(JSON.stringify(body).includes('SYNTHETIC-OUTPUT-NOT-TO-RELEASE'),false);
+    mock.mock.restore();
+  }
+});

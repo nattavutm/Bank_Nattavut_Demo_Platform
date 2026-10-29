@@ -6,7 +6,14 @@ export async function inspectGuard(env, type, payload, fetcher = fetch) {
   let response;
   try { response = await fetcher(GUARD_URL, { method:'POST', headers:{ 'Authorization':'Bearer '+env.AI_GUARD_API_KEY, 'Content-Type':'application/json', 'TMV1-Application-Name':'r5r5-demo-platform', 'TMV1-Request-Type':type, 'Prefer':'return=minimal' }, body:JSON.stringify(payload), signal:AbortSignal.timeout(7000), redirect:'manual' }); }
   catch { throw new Error('AI Guard is unavailable. The request was stopped without bypassing protection.'); }
-  if (!response.ok) throw new Error(response.status===401||response.status===403?'AI Guard authentication or permissions failed. Check the server configuration.':response.status===429?'AI Guard rate limit reached. Please try later.':'AI Guard could not inspect this request. Please try again.');
+  if (!response.ok) {
+    // The live API can deny sensitive data with HTTP 403 rather than an action envelope.
+    // Recognize only the observed denial code; generic 403s remain authentication errors.
+    let denial;
+    try { denial = await response.json(); } catch {}
+    if (response.status === 403 && denial?.error?.code === 'SensitiveDataDetected') return {action:'Block',code:'SensitiveDataDetected',reasons:[typeof denial.error.message==='string'?denial.error.message.slice(0,500):'Sensitive data detected.']};
+    throw new Error(response.status===401||response.status===403?'AI Guard authentication or permissions failed. Check the server configuration.':response.status===429?'AI Guard rate limit reached. Please try later.':'AI Guard could not inspect this request. Please try again.');
+  }
   let result;
   try { result = await response.json(); } catch { throw new Error('AI Guard returned an invalid decision. The request was stopped.'); }
   if (!['Allow','Block'].includes(result?.action)) throw new Error('AI Guard returned an invalid decision. The request was stopped.');
@@ -45,7 +52,7 @@ export default {
       if (body.guard) {
         try { inputDecision = await inspectGuard(env, 'OpenAIChatCompletionRequestV1', {model:MODEL,messages:messages.map(({role,content})=>({role,content}))}); }
         catch (error) { return json({error:error.message},503); }
-        if (inputDecision.action === 'Block') return json({reply:'This request was blocked by AI Guard.',source:'AI Guard',guard:{...inputDecision,stage:'input'}});
+        if (inputDecision.action === 'Block') return json({reply:'This request was blocked'+(inputDecision.code?' because sensitive data was detected.':' by AI Guard.'),source:inputDecision.code?'TrendAI API':'AI Guard',guard:{...inputDecision,stage:'input'}});
       }
       let timer;
       try {
@@ -58,7 +65,7 @@ export default {
         if (body.guard) {
           try { outputDecision = await inspectGuard(env, 'OpenAIChatCompletionResponseV1', {id:crypto.randomUUID(),object:'chat.completion',created:Math.floor(Date.now()/1000),model:MODEL,choices:[{index:0,message:{role:'assistant',content:result.response},finish_reason:'stop'}]}); }
           catch (error) { return json({error:error.message},503); }
-          if (outputDecision.action === 'Block') return json({reply:'This response was blocked by AI Guard.',source:'AI Guard',guard:{...outputDecision,stage:'output'}});
+          if (outputDecision.action === 'Block') return json({reply:'This response was blocked'+(outputDecision.code?' because sensitive data was detected.':' by AI Guard.'),source:outputDecision.code?'TrendAI API':'AI Guard',guard:{...outputDecision,stage:'output'}});
         }
         return json({ reply: result.response, model: MODEL, source: 'Workers AI', ...(body.guard?{guard:{action:'Allow',stage:'input-and-output',inputId:inputDecision.id,outputId:outputDecision.id,inputReasons:inputDecision.reasons,outputReasons:outputDecision.reasons}}:{}) });
       } catch (error) {
