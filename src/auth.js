@@ -62,7 +62,7 @@ export async function authorize(request,env){
   // Only the login screen and its non-sensitive visual assets are public.
   if(path==='/login'||path==='/login.html'){
     if(await authenticated(request,config))return Response.redirect(url.origin+'/',303);
-    const response=await env.ASSETS.fetch(new Request(url.origin+'/login.html',request));
+    const response=await env.ASSETS.fetch(new Request(url.origin+'/login',request));
     const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Frame-Options','DENY');
     return new Response(response.body,{status:response.status,headers});
   }
