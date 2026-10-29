@@ -25,6 +25,8 @@ export default {
       catch { return json({ error: 'Invalid JSON request.' }, 400); }
       const messages = body?.messages;
       if (!Array.isArray(messages) || !messages.length || messages.length > 12 || messages.some((m, i) => !m || m.role !== (i % 2 ? 'assistant' : 'user') || typeof m.content !== 'string' || !m.content.trim() || m.content.length > 4000) || messages.at(-1).role !== 'user') return json({ error: 'Send up to 12 alternating user and assistant messages, ending with a user message (4,000 characters each).' }, 400);
+      if (body.guard !== undefined && typeof body.guard !== 'boolean') return json({ error: 'Guard must be true or false.' }, 400);
+      if (body.guard === true) return json({ error: 'AI Guard is not connected yet. Turn it off to continue chatting.' }, 503);
       if (!env.AI) return json({ error: 'Workers AI is not connected. Deploy with the AI binding enabled.' }, 503);
       let timer;
       try {

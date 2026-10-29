@@ -72,12 +72,13 @@ function settingsPage(){return pageHead('WORKSPACE','Connection status','The UI 
 // Real Workers AI conversation; kept separate from the Scanner/Guard fixtures.
 let aiChatMessages = [];
 try { const stored = JSON.parse(sessionStorage.getItem('r5r5-live-chat')); if (Array.isArray(stored)) aiChatMessages = stored.filter(m => m && ['user','assistant'].includes(m.role) && typeof m.content === 'string').slice(-10); } catch {}
+let aiChatGuardEnabled = false;
 let aiChatPending = false, aiChatError = '', aiChatDraft = '', aiChatGeneration = 0, aiChatController;
 function saveAiChat() { try { sessionStorage.setItem('r5r5-live-chat', JSON.stringify(aiChatMessages.slice(-10))); } catch {} }
 function aiChatPage() {
   const message = (role, content) => '<div class="live-chat-message '+role+'"><div class="live-chat-text">'+escapeHtml(content)+'</div></div>';
   const transcript = aiChatMessages.map(m => message(m.role,m.content)).join('');
-  return '<section class="chat-surface '+(aiChatMessages.length||aiChatPending?'has-messages':'')+'"><header class="chat-minimal-header"><h1>AI Chat</h1><button type="button" class="button" data-ai-new>'+icon('chat')+'New chat</button></header><div class="chat-stage"><div class="live-chat-transcript" aria-live="polite">'+(transcript||(!aiChatPending?'<div class="live-chat-welcome"><h2>How can I help you?</h2></div>':''))+(aiChatPending?message('user',aiChatDraft)+'<div class="loading-bubble" role="status" aria-label="AI is thinking">Thinking</div>':'')+'</div>'+(aiChatError?'<div class="live-chat-error" role="alert">'+escapeHtml(aiChatError)+'</div>':'')+'<form class="chat-composer" id="ai-chat-form"><div class="composer-field"><textarea id="ai-chat-input" aria-label="Your message" placeholder="Ask anything" maxlength="4000" rows="1" '+(aiChatPending?'disabled':'')+'>'+escapeHtml(aiChatDraft)+'</textarea><button class="composer-send" type="submit" aria-label="Send message" '+(aiChatPending?'disabled':'')+'>'+icon('send')+'</button></div></form></div></section>';
+  return '<section class="chat-surface '+(aiChatMessages.length||aiChatPending?'has-messages':'')+'"><header class="chat-minimal-header"><h1>AI Chat</h1><div class="chat-header-actions"><button type="button" class="chat-guard-switch" data-ai-guard role="switch" aria-label="AI Guard" aria-checked="'+aiChatGuardEnabled+'" '+(aiChatPending?'disabled':'')+'><span>AI Guard</span><span class="switch-track" aria-hidden="true"><span></span></span><span class="switch-value">'+(aiChatGuardEnabled?'On':'Off')+'</span></button><button type="button" class="button" data-ai-new>'+icon('chat')+'New chat</button></div></header><div class="chat-stage"><div class="live-chat-transcript" aria-live="polite">'+(transcript||(!aiChatPending?'<div class="live-chat-welcome"><h2>How can I help you?</h2></div>':''))+(aiChatPending?message('user',aiChatDraft)+'<div class="loading-bubble" role="status" aria-label="AI is thinking">Thinking</div>':'')+'</div>'+(aiChatError?'<div class="live-chat-error" role="alert">'+escapeHtml(aiChatError)+'</div>':'')+'<form class="chat-composer" id="ai-chat-form"><div class="composer-field"><textarea id="ai-chat-input" aria-label="Your message" placeholder="Ask anything" maxlength="4000" rows="1" '+(aiChatPending?'disabled':'')+'>'+escapeHtml(aiChatDraft)+'</textarea><button class="composer-send" type="submit" aria-label="Send message" '+(aiChatPending?'disabled':'')+'>'+icon('send')+'</button></div></form></div></section>';
 }
 async function sendAiChat() {
   if (aiChatPending) return;
@@ -91,7 +92,7 @@ async function sendAiChat() {
   const controller = aiChatController;
   const timeout = setTimeout(() => controller.abort(), 30000);
   try {
-    const response = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages}), signal:aiChatController.signal});
+    const response = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages,guard:aiChatGuardEnabled}), signal:aiChatController.signal});
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Unable to send this request. Please try again.');
     if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('No response received. Please try again.');
@@ -110,6 +111,7 @@ root.addEventListener('submit', event => { if(event.target.id==='ai-chat-form'){
 root.addEventListener('input', event => { if(event.target.id==='ai-chat-input') aiChatDraft=event.target.value; });
 root.addEventListener('click', event => {
   const button=event.target.closest('button'); if(!button)return;
+  if(button.hasAttribute('data-ai-guard') && !aiChatPending){aiChatGuardEnabled=!aiChatGuardEnabled;aiChatError=aiChatGuardEnabled?'AI Guard is not connected yet. Turn it off to continue chatting.':'';render();return;}
   if(button.hasAttribute('data-ai-new')){ aiChatGeneration++; aiChatController?.abort(); aiChatPending=false; aiChatMessages=[]; aiChatDraft=''; aiChatError=''; saveAiChat(); render(); }
 });
 
