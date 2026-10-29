@@ -146,3 +146,6 @@ h1,h2,h3,.brand,.panel-title,.bank-balance{font-family:inherit}
 @media(max-width:720px){.guard-view #main{padding:17px 16px 0}.guard-playground{min-height:calc(100dvh - 175px)}.guard-playground-stage{padding:35px 0}.guard-intro h2{font-size:26px}.guard-intro{margin-bottom:23px}.guard-use-cases{margin-bottom:20px}.guard-response-grid{grid-template-columns:1fr;gap:15px}.guard-response-body{min-height:150px}.guard-empty-response{height:85px}.guard-input-wrap{padding-left:18px}.guard-input-wrap textarea{font-size:16px}.guard-run-prompt{display:block}.guard-run-prompt>span{display:block;margin-bottom:6px}.guard-playground.has-results .guard-playground-stage{padding-top:20px}.guard-playground.has-results .guard-intro h2{font-size:24px}}
 
 .guard-footnote a{color:inherit;text-decoration:none}.guard-footnote a:hover{text-decoration:underline}
+
+/* Official, unmodified TrendAI wordmark. Keep navigation symbols as functional icons. */
+.official-brand{display:flex;flex-direction:column;align-items:flex-start;gap:9px;margin:2px 8px 49px;font-size:12px;letter-spacing:0;line-height:1.5;font-weight:400;color:#7f848e}.official-brand img{display:block;width:150px;max-width:100%;height:auto;object-fit:contain}.official-brand>span{padding-left:1px}@media(max-width:720px){.official-brand{margin-bottom:17px;gap:7px}.official-brand img{width:140px}}
