@@ -8,7 +8,8 @@
     "check": "node --check public/app.js && node --check src/worker.js && node --check scripts/dev.mjs",
     "deploy": "wrangler deploy",
     "build": "npm run check",
-    "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/deploy-check"
+    "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/deploy-check",
+    "test": "node --test scripts/test-worker.mjs"
   },
   "engines": {
     "node": ">=22.0.0"

@@ -1,12 +1,18 @@
 # r5r5 TrendAI Demo Platform
 
-A minimal English-language AI security demo with two modules: **AI Scanner** and **AI Guard**. The example banking application is **r5r5 Bank**.
+A minimal English-language AI security demo with three modules: **AI Chat**, **AI Scanner**, and **AI Guard**. The example banking application is **r5r5 Bank**.
 
 Powered by Bank Nattavut.
 
-## Current status
+## AI Chat
 
-This version is an interactive UI preview. All chat replies, policy decisions, scan findings, and timings are local synthetic fixtures. It does not call an LLM, AI Guard, TMAS, or GitHub Actions. Sample results are labeled in the relevant screens.
+AI Chat calls Cloudflare Workers AI using the `AI` binding and `@cf/meta/llama-3.2-3b-instruct`. The binding is declared in `wrangler.jsonc`; no model API key is needed. Daily Workers AI free quotas apply. Chat context is stored in browser session storage, capped to five turns. New chat clears this context. This route does not use TrendAI AI Guard.
+
+`POST /api/chat` accepts bounded user/assistant conversation history, rejects client system prompts, and reports provider/usage errors separately. Deploy through the connected Cloudflare Git build. The Node preview server has no AI binding and cannot run live inference; use a deployed Worker for real responses.
+
+## Scanner / Guard status
+
+The Scanner and Guard screens remain interactive previews. Their replies, policy decisions, scan findings, and timings are local synthetic fixtures. It does not call an LLM, AI Guard, TMAS, or GitHub Actions. Sample results are labeled in the relevant screens.
 
 - AI Scanner: target configuration, a sensitive-data-disclosure objective, example findings, and sample report export.
 - AI Guard: Guard off/on comparison, input/output inspection traces, normal banking requests, request history, and JSON export.
