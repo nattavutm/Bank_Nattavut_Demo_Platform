@@ -150,7 +150,7 @@ h1,h2,h3,.brand,.panel-title,.bank-balance{font-family:inherit}
 /* Official, unmodified TrendAI wordmark. Keep navigation symbols as functional icons. */
 .official-brand{display:flex;flex-direction:column;align-items:flex-start;gap:9px;margin:2px 8px 49px;font-size:12px;letter-spacing:0;line-height:1.5;font-weight:400;color:#7f848e}.official-brand img{display:block;width:150px;max-width:100%;height:auto;object-fit:contain}.official-brand>span{padding-left:1px}@media(max-width:720px){.official-brand{margin-bottom:17px;gap:7px}.official-brand img{width:140px}}
 
-/* Enterprise type scale and official TrendAI symbols. */
+/* Enterprise type scale. */
 :root{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-synthesis:none;-webkit-font-smoothing:antialiased}
 body{font-size:14px;line-height:1.6;letter-spacing:0;color:#344054}
 .app-shell{grid-template-columns:224px minmax(0,1fr)}
@@ -158,8 +158,6 @@ body{font-size:14px;line-height:1.6;letter-spacing:0;color:#344054}
 .nav-label{font-size:11px;line-height:16px;font-weight:500;letter-spacing:.08em;color:#818894;margin-bottom:12px}
 #navigation .nav-link{font-size:14px;line-height:20px;font-weight:500;letter-spacing:0;color:#667085;min-height:44px;gap:12px;padding:10px 12px;margin-bottom:4px}
 #navigation .nav-link.active{color:#1d2939;font-weight:600}
-.trendai-symbol{display:block;width:24px;height:24px;flex-shrink:0;object-fit:contain}
-.guard-empty-response .trendai-symbol{width:40px;height:36px;margin-bottom:1px}
 .guard-empty-response{gap:16px;color:#818894;font-size:13px;line-height:20px}
 h1{font-size:28px;line-height:36px;letter-spacing:-.02em;font-weight:600;color:#1d2939}
 .chat-minimal-header{padding-bottom:20px}
@@ -188,4 +186,14 @@ h1{font-size:28px;line-height:36px;letter-spacing:-.02em;font-weight:600;color:#
 .panel-title{font-size:15px;line-height:24px;font-weight:600;letter-spacing:0}.panel-subtitle{font-size:12px;line-height:20px}
 .app-footer,.chat-view .app-footer,.guard-view .app-footer{font-size:12px;line-height:20px;letter-spacing:0}
 @media(max-width:1000px){.guard-use-cases button{font-size:12px}.guard-intro h2,.live-chat-welcome h2{font-size:29px;line-height:39px}}
-@media(max-width:720px){.app-shell{grid-template-columns:1fr}#navigation .nav-link{font-size:13px;gap:8px;padding:10px}.trendai-symbol{width:22px;height:22px}.guard-intro h2,.live-chat-welcome h2{font-size:26px;line-height:36px}.guard-playground.has-results .guard-intro h2{font-size:24px;line-height:32px}.guard-use-cases button{font-size:12px;padding:8px 12px}.guard-input-wrap textarea,.chat-stage textarea{font-size:16px;line-height:26px}.chat-minimal-header h1{font-size:17px;line-height:24px}.guard-response-text{font-size:14px;line-height:24px}}
+@media(max-width:720px){.app-shell{grid-template-columns:1fr}#navigation .nav-link{font-size:13px;gap:8px;padding:10px}.guard-intro h2,.live-chat-welcome h2{font-size:26px;line-height:36px}.guard-playground.has-results .guard-intro h2{font-size:24px;line-height:32px}.guard-use-cases button{font-size:12px;padding:8px 12px}.guard-input-wrap textarea,.chat-stage textarea{font-size:16px;line-height:26px}.chat-minimal-header h1{font-size:17px;line-height:24px}.guard-response-text{font-size:14px;line-height:24px}}
+
+/* Functional outline icons, styled for the enterprise console rather than brand marks. */
+#navigation .nav-link>span.module-nav-icon[data-icon]{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;color:#7a838e}
+#navigation .module-nav-icon svg{width:21px;height:21px;stroke-width:1.65}
+#navigation .nav-link.active>span.module-nav-icon[data-icon]{color:#d71920}
+#navigation .nav-link:hover>span.module-nav-icon[data-icon]{color:#b91c24}
+.empty-module-icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid #e9ecf0;background:#f8f9fb;color:#88929e}
+.guard-empty-response .empty-module-icon svg{width:24px;height:24px;stroke-width:1.5;color:inherit}
+.guard-empty-response.protected .empty-module-icon{color:#c52b32;background:#fff7f7;border-color:#f7e2e4}
+@media(max-width:720px){#navigation .nav-link>span.module-nav-icon[data-icon]{width:22px;height:22px}#navigation .module-nav-icon svg{width:20px;height:20px}}

@@ -1,8 +1,8 @@
 /* Live Chat and Guard comparison; Scanner outcomes remain illustrative fixtures. */
 const iconPaths = {
   grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
-  scan:'<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M3 12h18M8 8h8M8 16h8"/>',
-  shield:'<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+  scan:'<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M3 12h18"/><path d="M8 7h3v2H8zM13 15h3v2h-3z"/>',
+  shield:'<path d="m12 3 8 3v5c0 5-4.5 8.5-8 10-3.5-1.5-8-5-8-10V6l8-3Z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/>',
   layers:'<path d="m12 3 10 6-10 6L2 9l10-6Zm-10 12 10 6 10-6M2 12l10 6 10-6"/>',
   route:'<circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10a2 2 0 0 0 2 2h8M8 5h8a3 3 0 0 1 0 6H9"/>',
   network:'<rect x="8" y="3" width="8" height="6" rx="1"/><rect x="2" y="16" width="7" height="5" rx="1"/><rect x="15" y="16" width="7" height="5" rx="1"/><path d="M12 9v4m-6 3v-3h12v3"/>',
@@ -24,7 +24,7 @@ const iconPaths = {
   chevron:'<path d="m9 5 7 7-7 7"/>',
   compare:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M6 9h3m6 6h3"/>',
   file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M8 13h8m-8 4h5"/>',
-  chat:'<path d="M21 11a8 8 0 0 1-8 8H5l-3 3V5a3 3 0 0 1 3-3h8a8 8 0 0 1 8 9ZM7 8h10M7 12h7"/>',
+  chat:'<path d="M6 4h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H9l-5 3v-4a3 3 0 0 1-1-2V7a3 3 0 0 1 3-3Z"/><path d="M7 9h10M7 13h6"/>',
   spark:'<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/>',
 };
 const icon = name => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (iconPaths[name] || iconPaths.info) + '</svg>';
@@ -67,7 +67,7 @@ const guardPending=()=>guardRun&&Object.values(guardRun.results).some(result=>re
 function guardResult(side) {
   const protectedPath=side==='on';
   const result=guardRun?.results[side];
-  let body='<div class="guard-empty-response"><img class="trendai-symbol" src="/brand/trendai-symbol.svg" alt="" width="40" height="36">'+'<span>'+(protectedPath?'With AI Guard':'Without inspection')+'</span></div>';
+  let body='<div class="guard-empty-response '+(protectedPath?'protected':'')+'"><span class="empty-module-icon">'+icon(protectedPath?'shield':'chat')+'</span>'+'<span>'+(protectedPath?'With AI Guard':'Without inspection')+'</span></div>';
   if(result?.status==='pending') body='<div class="guard-waiting" role="status">'+(protectedPath?'Inspecting and responding…':'Waiting for the model…')+'</div>';
   if(result?.status==='error') body='<div class="guard-result-label error">Request stopped</div><div class="guard-response-error" role="alert">'+escapeHtml(result.error)+'</div>';
   if(result?.status==='done') {
