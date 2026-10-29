@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="r5r5 Bank AI Security Lab — discover a risk, apply a control, and prove the outcome.">
+  <meta name="theme-color" content="#fafafa">
+  <title>r5r5 TrendAI Demo Platform</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand text-brand" href="#scanner"><span>r5r5<small>TrendAI Demo Platform</small></span></a>
+      <div class="nav-label">AI SECURITY</div>
+      <nav id="navigation">
+        <a href="#scanner" class="nav-link" data-page="scanner"><span data-icon="scan"></span>AI Scanner<span class="nav-number">01</span></a>
+        <a href="#guard" class="nav-link active" data-page="guard" aria-current="page"><span data-icon="shield"></span>AI Guard<span class="nav-number">02</span></a>
+      </nav>
+    </aside>
+    <div class="app-main">
+      <header class="topbar"><div class="breadcrumb">Demo workspace <span>/</span> <strong id="breadcrumb-title">AI Guard</strong></div></header>
+      <main id="main"><div id="page-root"></div></main>
+      <footer class="app-footer"><span>Powered by <strong>Bank Nattavut</strong></span></footer>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <dialog id="finding-dialog" aria-labelledby="finding-title"><div id="finding-content"></div></dialog>
+</body>
+</html>
