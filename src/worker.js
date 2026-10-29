@@ -4,7 +4,7 @@ export const GUARD_URL = 'https://api.xdr.trendmicro.com/v3.0/aiSecurity/applyGu
 export async function inspectGuard(env, type, payload, fetcher = fetch) {
   if (!env.AI_GUARD_API_KEY) throw new Error('AI Guard is not configured.');
   let response;
-  try { response = await fetcher(GUARD_URL, { method:'POST', headers:{ 'Authorization':'Bearer '+env.AI_GUARD_API_KEY, 'Content-Type':'application/json', 'TMV1-Application-Name':'r5r5-demo-platform', 'TMV1-Request-Type':type, 'Prefer':'return=minimal' }, body:JSON.stringify(payload), signal:AbortSignal.timeout(7000), redirect:'error' }); }
+  try { response = await fetcher(GUARD_URL, { method:'POST', headers:{ 'Authorization':'Bearer '+env.AI_GUARD_API_KEY, 'Content-Type':'application/json', 'TMV1-Application-Name':'r5r5-demo-platform', 'TMV1-Request-Type':type, 'Prefer':'return=minimal' }, body:JSON.stringify(payload), signal:AbortSignal.timeout(7000), redirect:'manual' }); }
   catch { throw new Error('AI Guard is unavailable. The request was stopped without bypassing protection.'); }
   if (!response.ok) throw new Error(response.status===401||response.status===403?'AI Guard authentication or permissions failed. Check the server configuration.':response.status===429?'AI Guard rate limit reached. Please try later.':'AI Guard could not inspect this request. Please try again.');
   let result;
