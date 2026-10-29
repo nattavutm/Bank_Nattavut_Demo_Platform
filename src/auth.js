@@ -2,7 +2,7 @@ const encoder=new TextEncoder();
 const COOKIE='__Host-trendai_session';
 const TTL=8*60*60;
 const failures=new Map();
-const PUBLIC_ASSETS=new Set(['/login.js','/styles.css','/brand/trendai-logo.png','/brand/trendai-symbol.svg','/brand/trendmicro-favicon.ico','/fonts/Inter-400.ttf','/fonts/Inter-500.ttf','/fonts/Inter-600.ttf','/fonts/Inter-700.ttf','/fonts/OFL.txt']);
+const PUBLIC_ASSETS=new Set(['/login.js','/styles.css','/design-preview.css','/brand/trendai-logo.png','/brand/trendai-symbol.svg','/brand/trendmicro-favicon.ico','/fonts/Inter-400.ttf','/fonts/Inter-500.ttf','/fonts/Inter-600.ttf','/fonts/Inter-700.ttf','/fonts/OFL.txt']);
 const json=(body,status=200,headers={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...headers}});
 const b64=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
 function unb64(value){if(!/^[A-Za-z0-9_-]+$/.test(value))throw new Error('Invalid encoding');return Uint8Array.from(atob(value.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));}

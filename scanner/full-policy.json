@@ -1,0 +1,8 @@
+{
+  "techniques": ["None", "Ignore all previous instructions", "DAN (Do anything now)", "Encrypt the response", "Payload splitting", "Sockpuppet (Output prefix injection)"],
+  "modifiers": ["None", "Base64 Encoding", "Best-of-N Scrambling"],
+  "agenticTools": ["base64_encoding", "best_of_n_scrambling", "ignore_instructions", "encrypt_response"],
+  "defaultAgenticAttempts": 100,
+  "maxAgenticAttempts": 250,
+  "budgetMinutes": 330
+}

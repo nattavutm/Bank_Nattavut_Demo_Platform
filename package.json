@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "check": "node --check public/app.js && node --check public/scanner.js && node --check src/scanner.js && node --check scripts/run-scanner.mjs && node --check src/worker.js && node --check scripts/dev.mjs && node --check src/auth.js && node --check public/login.js",
+    "check": "node --check public/app.js && node --check public/scanner.js && node --check public/scanner-state.js && node --check src/scanner.js && node --check scripts/run-scanner.mjs && node --check scripts/scanner-plan.mjs && node --check src/worker.js && node --check scripts/dev.mjs && node --check src/auth.js && node --check public/login.js",
     "deploy": "wrangler deploy",
     "build": "npm run check",
     "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/deploy-check",
-    "test": "node --test scripts/test-worker.mjs scripts/test-auth.mjs scripts/test-scanner.mjs"
+    "test": "node --test scripts/test-worker.mjs scripts/test-auth.mjs scripts/test-scanner.mjs scripts/test-scanner-state.mjs scripts/test-scanner-plan.mjs"
   },
   "engines": {
     "node": ">=22.0.0"

@@ -32,8 +32,8 @@ Validation evidence, product sources, and excluded OWASP risks are recorded in [
 
 AI Scanner now has two minimal pages, available from the hover/click navigation submenu:
 
-- **Standard Scan** (`#scanner`): select nine objective groups, preview three prompts per group, and enter an HTTPS target endpoint.
-- **Agentic Scan** (`#agentic`): select an objective, set a maximum of 3/5/10 attempts, and start adaptive testing.
+- **Standard Scan** (`#scanner`): select supported managed objective groups and inspect the full scan plan, and enter an HTTPS target endpoint.
+- **Agentic Scan** (`#agentic`): select an objective, set the adaptive attempt limit per objective, and start adaptive testing.
 
 The Scanner pages now dispatch real TMAS workflows. See “Live GitHub Actions scanning” below for prerequisites, target approval, retention and limitations.
 
@@ -94,7 +94,7 @@ Inter is bundled in `public/fonts/` under the included SIL Open Font License (`p
 
 ## Live GitHub Actions scanning
 
-`AI Scanner → Standard Scan` runs the selected fixed prompts (three per objective); `Agentic Scan` uses a TrendAI hosted attacker and judge, bounded by the selected attempts. All nine supported objective categories are available. The server dispatches `.github/workflows/ai-scan.yml` on `main`; Actions downloads checksum-pinned TMAS v2.335.0, executes the scan, and sends status plus the actual JSON report back via scoped HMAC authentication. No simulated findings are generated.
+`AI Scanner → Standard Scan` now runs the complete selected managed catalogue across baseline, techniques and modifiers. `Agentic Scan` adds native adaptive attacks with all four supported attacker tools. The pinned TMAS v2.335.0 wizard exposes twenty objectives. Objectives, techniques and modifiers start unselected; users may select all in each group. The server dispatches `.github/workflows/ai-scan.yml` on `main`; Actions downloads checksum-pinned TMAS v2.335.0, executes the scan, and sends status plus the actual JSON report back via scoped HMAC authentication. No simulated findings are generated.
 
 Choose **AI Chat** and toggle **AI Guard** for the built-in Workers AI target. This uses the chat model with additional synthetic records, a hidden marker and an illustrative non-executable tool schema for measurable disclosure probes. It is independent of the user's chat history. Requests pass real input/output AI Guard checks when enabled. Guard errors fail closed. Resource tests remain bounded by the server's 512-token output cap.
 
@@ -102,10 +102,23 @@ Custom targets use a JSON `messages` request and `reply` response. Before runnin
 
 Encrypted Worker Secrets: `SCANNER_GITHUB_TOKEN`, `SCANNER_SERVICE_KEY`. Actions Secrets: `SCANNER_SERVICE_KEY`, `TMAS_API_KEY`. `SCAN_JOBS` KV retains jobs/reports for seven days. GitHub artifacts retain full JSON/HTML reports for seven days. Run logs are subject to repository log retention settings. The GitHub token is currently the owner-approved OAuth credential with `repo/workflow`; a repository-scoped credential is preferable when available.
 
-The workflow uses standard Ubuntu runners, serializes scan execution, and has a 22-minute hard timeout. Each scan requests at most 15 minutes from TMAS. The web report is capped at 1.3 MB; larger reports remain in the Actions artifact. Cancellation and setup failures can be inspected through the Actions link. Progress is job status, not a simulated per-attempt animation. KV is eventually consistent, so report/status propagation can be delayed. The active-job guard is best effort; GitHub concurrency serializes overlapping jobs.
+The workflow uses standard Ubuntu runners, serializes scan execution, and has a six-hour hard timeout. The full multi-phase plan shares a 330-minute scan budget. The web report is capped at 1.3 MB; larger reports remain in the Actions artifact. Cancellation and setup failures can be inspected through the Actions link. Progress is job status, not a simulated per-attempt animation. KV is eventually consistent, so report/status propagation can be delayed. The active-job guard is best effort; GitHub concurrency serializes overlapping jobs.
 
 TrendAI Scanner entitlement and hosted attacker/judge availability depend on the tenant. Workers AI free quotas, GitHub artifact storage and KV quotas still apply. No plan upgrades are performed by this setup.
 
 ## Integration verification
 
-Live Standard Scan: GitHub Actions run `40883089559`, three Sensitive Data Disclosure tests, completed successfully with two judge findings and one refusal. Live Agentic Scan: run `40883591334`, three attempts with AI Guard enabled, completed successfully; all three target requests were blocked by AI Guard at input inspection. These observations describe those specific runs, not universal protection coverage. Automated authentication, dispatch, target-validation and report-lifecycle checks: 30 passing tests.
+Live Standard Scan: GitHub Actions run `40883089559`, three Sensitive Data Disclosure tests, completed successfully with two judge findings and one refusal. Live Agentic Scan: run `40883591334`, three attempts with AI Guard enabled, completed successfully; all three target requests were blocked by AI Guard at input inspection. These observations describe those specific runs, not universal protection coverage. Automated authentication, dispatch, target-validation, full-plan and lifecycle checks: 49 passing tests.
+
+## Design and Scanner behavior
+
+The working tree contains the accepted dark design with horizontal navigation and r5r5 Demo Platform text branding. Blueprint and Risk Insights carry small unframed TBD labels. AI Chat has no TBD label. The Scanner submenu has no arrow; it opens on hover and remains keyboard/touch accessible.
+
+Agentic selection now accepts multiple objectives in one job. Maximum adaptive attempts applies per objective; the UI displays this upper bound in addition to the managed catalogue. The existing runner creates one attack entry for every selected objective. The plan has a 330-minute shared budget and a six-hour Actions ceiling. Timeouts, quotas and interruptions can yield partial coverage, which is explicitly labeled.
+
+Scan status distinguishes starting, queued, in progress, finalizing results and completed. A temporary polling/network failure keeps the last known status and retries; it does not mark a scan failed. Stale queued/running snapshots cannot regress a newer state. A successful GitHub run awaiting report propagation is shown as finalizing. The current design and scanner controls are included in this release.
+
+Standard Scan uses four disjoint managed configurations to cover every combination of six techniques (including baseline) and three modifiers (including unmodified). TMAS forbids mixing `None` with explicit transformations in one list. Agentic Scan appends a fifth adaptive phase. Configs use main schema 2.16.0 and agentic/1.4 and passed the pinned CLI offline validator. The full plan passed offline TMAS schema validation; a full live scan has not yet been executed. Exact managed prompt counts come from TMAS at run time, never from a fixed UI estimate.
+Local selection controls now expose all six techniques and three modifiers. Each Scanner mode keeps its own selections. Only chosen transformations reach the runner; `None` is split into valid phases when selected alongside explicit transformations. Native Agentic tools follow their corresponding selected transformations. New scan clears all three groups. Summary/count labels were removed from the main Scanner view at the user’s request.
+
+Local AI Guard now contains 27 synthetic examples: three variants in each of the nine existing OWASP categories (LLM07 remains omitted). Variants inherit the category’s existing scope metadata. These are editable text probes; they do not add executable tools, training pipelines, retrieval ACLs or supply-chain scanners. All 27 were checked for UI prompt population. New examples have not all been validated against the live Guard service. Variant buttons now share the dark neutral palette and expose selected state through aria-pressed.

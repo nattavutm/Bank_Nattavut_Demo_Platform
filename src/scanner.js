@@ -1,3 +1,4 @@
+import fullPolicy from '../scanner/full-policy.json' with {type:'json'};
 import catalog from '../scanner/objectives.json' with {type:'json'};
 const REPO='nattavutm/Bank_Nattavut_Demo_Platform', TTL=604800;
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
@@ -24,11 +25,12 @@ export async function scannerService(request,env,inspectGuard){const url=new URL
  if(request.method==='GET')return json({...job,catalog:catalog.filter(c=>job.objectives.includes(c.id))});
  if(request.method!=='POST')return json({error:'Use GET or POST.'},405);
  let update;try{update=await body(request,1500000);}catch{return json({error:'Invalid report.'},400);}
- if(!['running','completed','failed'].includes(update.status)||!Number.isSafeInteger(update.runId)||update.runId<1)return json({error:'Invalid status.'},400);
- if(['completed','failed'].includes(job.status))return json({ok:true});
+ if(!['running','completed','partial','failed'].includes(update.status)||!Number.isSafeInteger(update.runId)||update.runId<1)return json({error:'Invalid status.'},400);
+ if(['completed','partial','failed'].includes(job.status))return json({ok:true});
  Object.assign(job,{status:update.status,runId:update.runId,updatedAt:Date.now(),error:typeof update.error==='string'?update.error.slice(0,500):null});
+ if(update.progress&&Number.isInteger(update.progress.phase)&&update.progress.phase>=1&&update.progress.phase<=5&&Number.isInteger(update.progress.phaseCount)&&update.progress.phaseCount<=5&&update.progress.phaseCount>=update.progress.phase){job.progress={phase:update.progress.phase,phaseCount:update.progress.phaseCount,name:String(update.progress.name||'').slice(0,80),completedTests:Number.isSafeInteger(update.progress.completedTests)?Math.max(0,update.progress.completedTests):0};}
  if(update.report&&typeof update.report==='object')await env.SCAN_JOBS.put(id+':report',JSON.stringify(update.report),{expirationTtl:TTL});
- await env.SCAN_JOBS.put(id,JSON.stringify(job),{expirationTtl:TTL});if(['completed','failed'].includes(job.status)){const active=await env.SCAN_JOBS.get('active','json');if(active?.id===id)await env.SCAN_JOBS.delete('active');}return json({ok:true});
+ await env.SCAN_JOBS.put(id,JSON.stringify(job),{expirationTtl:TTL});if(['completed','partial','failed'].includes(job.status)){const active=await env.SCAN_JOBS.get('active','json');if(active?.id===id)await env.SCAN_JOBS.delete('active');}return json({ok:true});
 }
 export async function scannerApi(request,env){const url=new URL(request.url);
  if(url.pathname==='/api/scanner/status')return json({configured:ready(env),target:url.origin+'/api/scanner/target'});
@@ -36,20 +38,23 @@ export async function scannerApi(request,env){const url=new URL(request.url);
   if(request.headers.get('Origin')!==url.origin)return json({error:'Invalid origin.'},403);if(!ready(env))return json({error:'Scanner is not connected.'},503);
   let spec;try{spec=await body(request,4096);}catch{return json({error:'Invalid scan request.'},400);}
   if(!targetAllowed(spec.target,env,url.origin))return json({error:'This endpoint is not approved for scanning. Ask the demo owner to connect it first.'},400);
-  if(!['standard','agentic'].includes(spec.mode)||!Array.isArray(spec.objectives)||!spec.objectives.length||spec.objectives.length>9||new Set(spec.objectives).size!==spec.objectives.length||spec.objectives.some(id=>!catalog.some(c=>c.id===id))||!([3,5,10].includes(spec.attempts))||spec.mode==='agentic'&&spec.objectives.length!==1)return json({error:'Select a scan mode, valid objectives and an attempt limit.'},400);
+  if(!['standard','agentic'].includes(spec.mode)||!Array.isArray(spec.objectives)||!spec.objectives.length||spec.objectives.length>catalog.length||new Set(spec.objectives).size!==spec.objectives.length||spec.objectives.some(id=>!catalog.some(c=>c.id===id))||(!Number.isInteger(spec.attempts)||spec.attempts<1||spec.attempts>fullPolicy.maxAgenticAttempts))return json({error:'Select a scan mode, valid objectives and an attempt limit.'},400);
+  const techniques=spec.techniques??fullPolicy.techniques,modifiers=spec.modifiers??fullPolicy.modifiers;
+  const validChoices=(values,allowed)=>Array.isArray(values)&&values.length>0&&values.length<=allowed.length&&new Set(values).size===values.length&&values.every(v=>allowed.includes(v));
+  if(!validChoices(techniques,fullPolicy.techniques)||!validChoices(modifiers,fullPolicy.modifiers))return json({error:'Select at least one valid technique and modifier.'},400);
   const existing=await env.SCAN_JOBS.get('active','json');if(existing&&existing.until>Date.now())return json({error:'A scan is already active. Please wait.',id:existing.id},409);
-  const id=crypto.randomUUID(),job={id,mode:spec.mode,target:spec.target,objectives:spec.objectives,attempts:spec.attempts,status:'queued',createdAt:Date.now(),updatedAt:Date.now()};
-  await env.SCAN_JOBS.put(id,JSON.stringify(job),{expirationTtl:TTL});await env.SCAN_JOBS.put('active',JSON.stringify({id,until:Date.now()+25*60000}),{expirationTtl:1500});
+  const id=crypto.randomUUID(),job={id,profile:techniques.length===fullPolicy.techniques.length&&modifiers.length===fullPolicy.modifiers.length?'full':'selected',techniques,modifiers,mode:spec.mode,target:spec.target,objectives:spec.objectives,attempts:spec.attempts,status:'queued',createdAt:Date.now(),updatedAt:Date.now()};
+  await env.SCAN_JOBS.put(id,JSON.stringify(job),{expirationTtl:TTL});await env.SCAN_JOBS.put('active',JSON.stringify({id,until:Date.now()+360*60000}),{expirationTtl:21600});
   try{const response=await github(env,'/actions/workflows/ai-scan.yml/dispatches',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:'main',inputs:{job_id:id}})});if(!response.ok)throw new Error();}catch{job.status='failed';job.error='GitHub could not start the workflow. Check scanner credentials and Actions access.';await env.SCAN_JOBS.put(id,JSON.stringify(job),{expirationTtl:TTL});await env.SCAN_JOBS.delete('active');return json({error:job.error},502);}
   return json(job,202);
  }
  const match=url.pathname.match(/^\/api\/scanner\/jobs\/([a-f0-9-]{36})(\/report)?$/);if(match&&request.method==='GET'){
   const job=await env.SCAN_JOBS?.get(match[1],'json');if(!job)return json({error:'Scan not found or expired.'},404);
   if(match[2]){const report=await env.SCAN_JOBS.get(match[1]+':report','json');return report?json(report):json({error:'Report is not available yet.'},404);}
-  if(!['completed','failed'].includes(job.status)&&await env.SCAN_JOBS.get(match[1]+':report'))job.status='completed';
+  if(!['completed','partial','failed'].includes(job.status)){const report=await env.SCAN_JOBS.get(match[1]+':report','json');if(report)job.status=['partial','failed'].includes(report.lifecycle?.status)?report.lifecycle.status:'completed';}
   // Polling GitHub also resolves cancelled jobs and runners that fail before callback.
-  if(!['completed','failed'].includes(job.status))try{const response=await github(env,'/actions/workflows/ai-scan.yml/runs?event=workflow_dispatch&per_page=30');if(response.ok){const runs=await response.json();const run=runs.workflow_runs?.find(r=>r.display_title==='Scan '+job.id);if(run){job.runId=run.id;if(run.status==='completed'&&run.conclusion!=='success'){job.status='failed';job.error='Workflow ended ('+run.conclusion+'). Open GitHub Actions for details.';}else job.status=run.status==='in_progress'?'running':'queued';}}}catch{}
-  if(!['completed','failed'].includes(job.status)&&Date.now()-job.createdAt>30*60000){job.status='failed';job.error='Scan timed out. See GitHub Actions for details.';}
+  if(!['completed','partial','failed'].includes(job.status))try{const response=await github(env,'/actions/workflows/ai-scan.yml/runs?event=workflow_dispatch&per_page=30');if(response.ok){const runs=await response.json();const run=runs.workflow_runs?.find(r=>r.display_title==='Scan '+job.id);if(run){job.runId=run.id;if(run.status==='completed'&&run.conclusion!=='success'){job.status='failed';job.error='Workflow ended ('+run.conclusion+'). Open GitHub Actions for details.';}else job.status=run.status==='completed'?'finishing':run.status==='in_progress'?'running':'queued';}}}catch{}
+  if(!['completed','partial','failed'].includes(job.status)&&Date.now()-job.createdAt>370*60000){job.status='failed';job.error='Scan timed out. See GitHub Actions for details.';}
   if(job.status==='failed'){await env.SCAN_JOBS.put(job.id,JSON.stringify(job),{expirationTtl:TTL});const active=await env.SCAN_JOBS.get('active','json');if(active?.id===job.id)await env.SCAN_JOBS.delete('active');}
   return json({...job,runUrl:job.runId?'https://github.com/'+REPO+'/actions/runs/'+job.runId:null});
  }
