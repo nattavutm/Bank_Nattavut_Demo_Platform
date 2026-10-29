@@ -4,6 +4,8 @@ import {spawn} from 'node:child_process';
 const origin='https://demo.nattavut.online', id=process.env.SCAN_JOB_ID;
 if(!/^[a-f0-9-]{36}$/.test(id||''))throw Error('Invalid job ID');
 const token=scope=>createHmac('sha256',process.env.SCANNER_SERVICE_KEY).update(scope).digest('hex');
+console.log('::add-mask::'+token('target'));
+console.log('::add-mask::'+token('job:'+id));
 const endpoint=origin+'/api/scanner/jobs/'+id+'/runner';
 const headers={Authorization:'Bearer '+token('job:'+id),'Content-Type':'application/json'};
 async function request(method,data){const response=await fetch(endpoint,{method,headers,body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(20000)});if(!response.ok)throw Error('Scanner callback HTTP '+response.status);return response.json();}

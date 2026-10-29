@@ -45,9 +45,11 @@ export async function scannerApi(request,env){const url=new URL(request.url);
  const match=url.pathname.match(/^\/api\/scanner\/jobs\/([a-f0-9-]{36})(\/report)?$/);if(match&&request.method==='GET'){
   const job=await env.SCAN_JOBS?.get(match[1],'json');if(!job)return json({error:'Scan not found or expired.'},404);
   if(match[2]){const report=await env.SCAN_JOBS.get(match[1]+':report','json');return report?json(report):json({error:'Report is not available yet.'},404);}
+  if(!['completed','failed'].includes(job.status)&&await env.SCAN_JOBS.get(match[1]+':report'))job.status='completed';
   // Polling GitHub also resolves cancelled jobs and runners that fail before callback.
-  if(!['completed','failed'].includes(job.status))try{const response=await github(env,'/actions/workflows/ai-scan.yml/runs?event=workflow_dispatch&per_page=30');if(response.ok){const runs=await response.json();const run=runs.workflow_runs?.find(r=>r.display_title==='Scan '+job.id);if(run){job.runId=run.id;if(run.status==='completed'){job.status='failed';job.error='Workflow ended ('+run.conclusion+'). Open GitHub Actions for details.';}else job.status=run.status==='in_progress'?'running':'queued';}}}catch{}
+  if(!['completed','failed'].includes(job.status))try{const response=await github(env,'/actions/workflows/ai-scan.yml/runs?event=workflow_dispatch&per_page=30');if(response.ok){const runs=await response.json();const run=runs.workflow_runs?.find(r=>r.display_title==='Scan '+job.id);if(run){job.runId=run.id;if(run.status==='completed'&&run.conclusion!=='success'){job.status='failed';job.error='Workflow ended ('+run.conclusion+'). Open GitHub Actions for details.';}else job.status=run.status==='in_progress'?'running':'queued';}}}catch{}
   if(!['completed','failed'].includes(job.status)&&Date.now()-job.createdAt>30*60000){job.status='failed';job.error='Scan timed out. See GitHub Actions for details.';}
+  if(job.status==='failed'){await env.SCAN_JOBS.put(job.id,JSON.stringify(job),{expirationTtl:TTL});const active=await env.SCAN_JOBS.get('active','json');if(active?.id===job.id)await env.SCAN_JOBS.delete('active');}
   return json({...job,runUrl:job.runId?'https://github.com/'+REPO+'/actions/runs/'+job.runId:null});
  }
  return json({error:'Unknown scanner route.'},404);
