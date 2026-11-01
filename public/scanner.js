@@ -194,12 +194,6 @@ function validateScannerUrl() {
 }
 document.addEventListener('DOMContentLoaded',()=>{
   loadScannerStatus();if(scannerJob)pollScanner();
-  const navigation=document.getElementById('scanner-navigation');
-  let openedByHover=false;
-  navigation.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&!navigation.open){navigation.open=true;openedByHover=true;}});
-  navigation.querySelector('summary').addEventListener('click',event=>{if(openedByHover&&event.detail>0){event.preventDefault();navigation.open=true;}openedByHover=false;});
-  navigation.addEventListener('pointerleave',event=>{if(event.pointerType==='mouse'&&!['scanner','agentic'].includes(state.page)&&!navigation.contains(document.activeElement)){navigation.open=false;openedByHover=false;}});
-  navigation.addEventListener('keydown',event=>{if(event.key==='Escape'){navigation.open=false;navigation.querySelector('summary').focus();event.preventDefault();}});
   document.getElementById('page-root').addEventListener('click',event=>{
     const button=event.target.closest('button');if(!button)return;
     if(button.dataset.scannerObjective){const id=button.dataset.scannerObjective;const selection=state.page==='agentic'?scannerAgentSelection:scannerSelection;selection.has(id)?selection.delete(id):selection.add(id);render();document.querySelector(`[data-scanner-objective="${id}"]`)?.focus();}

@@ -9,8 +9,33 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": true
   },
-  "kv_namespaces": [{"binding":"SCAN_JOBS","id":"2c28559a0bd5472abfa010e3f40ab645"}],
+  "kv_namespaces": [
+    {
+      "binding": "SCAN_JOBS",
+      "id": "2c28559a0bd5472abfa010e3f40ab645"
+    },
+    {
+      "binding": "LR_EVENTS",
+      "id": "a4fc38e06b1a406f99da61aa3ad945c9"
+    },
+    {
+      "binding": "LR_STATE",
+      "id": "7a3b9b1532304bfb98b270b5a7ce502a"
+    }
+  ],
   "ai": {
     "binding": "AI"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "LR_DB",
+      "database_name": "r5r5-gateway-preview",
+      "database_id": "5e3764c8-901d-4f45-ab50-d6e59dcca244"
+    },
+    {
+      "binding": "LR_DB_PROTECTED",
+      "database_name": "r5r5-gateway-protected-preview",
+      "database_id": "3cd06fde-7b99-4bee-ae6b-0870172df253"
+    }
+  ]
 }

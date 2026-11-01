@@ -1,0 +1,98 @@
+[
+  {
+    "id": "u-sales",
+    "type": "person",
+    "name": "Somchai · Sales",
+    "dept": "Sales",
+    "role": "sales_rep",
+    "intended_access": "Own customers; public and internal documents",
+    "status": "active",
+    "apiKeyRef": "KEY_U_SALES"
+  },
+  {
+    "id": "u-support",
+    "type": "person",
+    "name": "Malee · Support",
+    "dept": "Support",
+    "role": "support_agent",
+    "intended_access": "Customer contact details; internal documents",
+    "status": "active",
+    "apiKeyRef": "KEY_U_SUPPORT"
+  },
+  {
+    "id": "u-hr",
+    "type": "person",
+    "name": "Pim · HR",
+    "dept": "HR",
+    "role": "hr_officer",
+    "intended_access": "HR records; confidential HR documents",
+    "status": "active",
+    "apiKeyRef": "KEY_U_HR"
+  },
+  {
+    "id": "u-finance",
+    "type": "person",
+    "name": "Anan · Finance",
+    "dept": "Finance",
+    "role": "finance",
+    "intended_access": "Balances and pricing documents",
+    "status": "active",
+    "apiKeyRef": "KEY_U_FINANCE"
+  },
+  {
+    "id": "u-intern",
+    "type": "person",
+    "name": "Ton · Intern",
+    "dept": "Sales",
+    "role": "intern",
+    "intended_access": "Public documents only",
+    "status": "active",
+    "apiKeyRef": "KEY_U_INTERN"
+  },
+  {
+    "id": "u-vendor",
+    "type": "person",
+    "name": "ExtCo · Contractor",
+    "dept": "External",
+    "role": "contractor",
+    "intended_access": "No sensitive information",
+    "status": "active",
+    "apiKeyRef": "KEY_U_VENDOR"
+  },
+  {
+    "id": "a-support-bot",
+    "type": "agent",
+    "name": "Support Bot",
+    "dept": "Support",
+    "role": "agent",
+    "owner": "u-support",
+    "purpose": "Read inbound tickets and send support replies",
+    "tools": ["crm.*", "knowledge.*", "comms.*"],
+    "status": "active",
+    "apiKeyRef": "KEY_A_SUPPORT_BOT"
+  },
+  {
+    "id": "a-report",
+    "type": "agent",
+    "name": "Report Agent",
+    "dept": "Finance",
+    "role": "agent",
+    "owner": "u-finance",
+    "purpose": "Build and email reports",
+    "tools": ["crm.*", "knowledge.*", "comms.*"],
+    "status": "active",
+    "apiKeyRef": "KEY_A_REPORT"
+  },
+  {
+    "id": "a-ops",
+    "type": "agent",
+    "name": "Ops Agent",
+    "dept": "IT",
+    "role": "agent",
+    "owner": "IT",
+    "purpose": "Clean duplicate customer records",
+    "tools": ["crm.*"],
+    "status": "active",
+    "apiKeyRef": "KEY_A_OPS"
+  }
+]

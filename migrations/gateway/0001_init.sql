@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS customers(id TEXT PRIMARY KEY,full_name TEXT,thai_id TEXT,phone TEXT,email TEXT,address TEXT,tier TEXT,credit_card TEXT,balance_thb INTEGER,owner_user_id TEXT,created_at TEXT,classification TEXT);
+CREATE TABLE IF NOT EXISTS deals(id TEXT PRIMARY KEY,customer_id TEXT,title TEXT,value_thb INTEGER,stage TEXT,owner_user_id TEXT,classification TEXT);
+CREATE TABLE IF NOT EXISTS notes(id TEXT PRIMARY KEY,customer_id TEXT,author TEXT,body TEXT,created_at TEXT,classification TEXT);
+CREATE TABLE IF NOT EXISTS employees(id TEXT PRIMARY KEY,full_name TEXT,dept TEXT,title TEXT,salary_thb INTEGER,bank_account TEXT,national_id TEXT,classification TEXT);
+CREATE TABLE IF NOT EXISTS tickets(id TEXT PRIMARY KEY,from_email TEXT,subject TEXT,body TEXT,status TEXT,classification TEXT);
+CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,scenario_id TEXT,profile TEXT,execution_mode TEXT,actor_id TEXT,status TEXT,started_at TEXT,ended_at TEXT,result TEXT,generation TEXT);
+CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY,ts TEXT,run_id TEXT,scenario_id TEXT,profile TEXT,actor_id TEXT,type TEXT,surface TEXT,json TEXT);
+CREATE INDEX IF NOT EXISTS events_by_run ON events(run_id,ts);
+CREATE TABLE IF NOT EXISTS damage(run_id TEXT,metric TEXT,entity_id TEXT,PRIMARY KEY(run_id,metric,entity_id));
+CREATE TABLE IF NOT EXISTS inbox(id TEXT PRIMARY KEY,run_id TEXT,to_address TEXT,subject TEXT,body TEXT,external INTEGER,simulated INTEGER DEFAULT 1);
+CREATE TABLE IF NOT EXISTS state(key TEXT PRIMARY KEY,value TEXT);
+INSERT OR IGNORE INTO state VALUES('generation','initial');

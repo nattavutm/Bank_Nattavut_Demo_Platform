@@ -1,8 +1,9 @@
+import {gatewayApi} from './gateway/index.js';
 import { scannerApi, scannerService } from './scanner.js';
 import { authorize } from './auth.js';
-export const MODEL = '@cf/meta/llama-3.2-3b-instruct';
+import {MODEL,GUARD_URL} from './constants.js';
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
-export const GUARD_URL = 'https://api.xdr.trendmicro.com/v3.0/aiSecurity/applyGuardrails';
+
 export async function inspectGuard(env, type, payload, fetcher = fetch) {
   if (!env.AI_GUARD_API_KEY) throw new Error('AI Guard is not configured.');
   let response;
@@ -86,7 +87,7 @@ export const app = {
 export default {async fetch(request,env){
   const service=await scannerService(request,env,inspectGuard);if(service)return service;
   const auth=await authorize(request,env);if(auth)return auth;
-  const response=await app.fetch(request,env);
-  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Frame-Options','DENY');headers.set('X-Content-Type-Options','nosniff');
+  const response=new URL(request.url).pathname.startsWith('/api/gateway/')?await gatewayApi(request,env):await app.fetch(request,env);
+  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Frame-Options',['/gateway/','/gateway/index.html'].includes(new URL(request.url).pathname)?'SAMEORIGIN':'DENY');if(['/gateway/','/gateway/index.html'].includes(new URL(request.url).pathname))headers.set('Content-Security-Policy',"frame-ancestors 'self'");headers.set('X-Content-Type-Options','nosniff');
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }};
