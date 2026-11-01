@@ -21,10 +21,12 @@ jobs:
       - name: Install verified TMAS CLI
         shell: bash
         run: |
-          curl --fail --silent --show-error --location --retry 3 https://ast-cli.xdr.trendmicro.com/tmas-cli/latest/tmas-cli_Linux_x86_64.tar.gz -o tmas.tar.gz
+          # Keep this immutable version paired with the verified checksum below.
+          curl --fail --silent --show-error --location --retry 3 https://ast-cli.xdr.trendmicro.com/tmas-cli/2.335.0/tmas-cli_Linux_x86_64.tar.gz -o tmas.tar.gz
           echo '3bcbeeca157a63a4efa7f89489a46b0045602417e7143bfbbde497a8f8fbe526  tmas.tar.gz' | sha256sum --check
           tar -xzf tmas.tar.gz tmas
           chmod +x tmas
+          ./tmas version
       - name: Run scanner and publish results
         env:
           SCAN_JOB_ID: ${{ inputs.job_id }}
