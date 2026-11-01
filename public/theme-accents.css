@@ -19,8 +19,24 @@
   color: #fff;
   opacity: 0.8;
 }
-.platform-dropdown a[aria-current='page'] {
-  box-shadow: inset 3px 0 0 var(--accent);
+/* The same filled selection at every level of the platform navigation. */
+body .platform-dropdown a[aria-current='page'],
+body .platform-category[aria-expanded='true'],
+body .platform-group:has([data-nav-route][aria-current='page']) > .platform-category {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
+}
+body .platform-dropdown a[aria-current='page']:hover,
+body .platform-category[aria-expanded='true']:hover,
+body .platform-group:has([data-nav-route][aria-current='page']) > .platform-category:hover {
+  background: var(--accent-hover);
+}
+body .platform-dropdown a[aria-current='page'] small,
+body .platform-category[aria-expanded='true'] > span,
+body .platform-group:has([data-nav-route][aria-current='page']) > .platform-category > span {
+  color: #fff;
+  opacity: .8;
 }
 
 body .chat-stage .composer-send:not(:disabled),

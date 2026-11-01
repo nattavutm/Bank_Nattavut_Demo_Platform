@@ -153,6 +153,7 @@ function scannerPage(agentic) {
   const fullTransforms=transforms.techniques.size===scannerTechniques.length&&transforms.modifiers.size===scannerModifiers.length;
   return `<section class="scanner-surface">
     <header class="chat-minimal-header"><h1>${agentic?'Agentic Scan':'Standard Scan'}</h1><button class="button" type="button" data-scanner-reset ${active||scannerStarting?'disabled':''}>${icon('reset')}${active||scannerStarting?'Scan in progress':'New scan'}</button></header>
+    <div class="scanner-explainer-mount" data-scanner-explainer></div>
     <div class="scanner-stage">
       <div class="scanner-welcome"><h2>${agentic?'How resilient is your AI?':'What would you like to test?'}</h2><p>${agentic?'An AI attacker adapts its approach, one attempt at a time.':'Explore how your AI responds to adversarial prompts.'}</p></div>
       <div class="scanner-target-choice" role="group" aria-label="Target source"><button type="button" data-scanner-target="chat" aria-pressed="${scannerTargetKind==='chat'}">AI Chat</button><button type="button" data-scanner-target="custom" aria-pressed="${scannerTargetKind==='custom'}">Custom endpoint</button></div>
