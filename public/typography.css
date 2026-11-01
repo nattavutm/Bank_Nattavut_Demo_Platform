@@ -1,0 +1,158 @@
+/* Shared typography, based on the AI Chat welcome heading. */
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Inter-400.ttf') format('truetype');
+}
+
+:root {
+  --platform-font: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* The reference heading uses -1.6px at 42px; scale tracking with text size. */
+  --platform-tracking: -0.0380952381em;
+}
+
+body {
+  font-family: var(--platform-font);
+  font-weight: 400;
+  letter-spacing: var(--platform-tracking);
+}
+
+/* Override historical per-page font treatments without changing layout sizes. */
+body :is(h1, h2, h3, h4, h5, h6, p, a, button, label, input, textarea,
+  select, summary, span, small, strong, b, em, dt, dd, li, th, td, output) {
+  font-family: var(--platform-font) !important;
+  font-weight: 400 !important;
+  letter-spacing: var(--platform-tracking) !important;
+}
+
+/* Technical payloads retain the spacing and font needed to inspect them. */
+body :is(pre, code, kbd, samp),
+body :is(pre, code, kbd, samp) * {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  letter-spacing: normal !important;
+}
+
+/* Larger supporting copy and controls; hero headings retain their page sizes. */
+#navigation .nav-link { font-size: 15px; line-height: 1.5; }
+body .sidebar-signout button,
+body .platform-category,
+body .platform-dropdown a { font-size: 15px; }
+body .platform-dropdown small { font-size: 12px; }
+body .text-demo-brand > span { font-size: 12px; }
+body .chat-minimal-header h1 { font-size: 16px; line-height: 1.5; }
+body .chat-minimal-header .button,
+body .chat-guard-switch,
+body .scanner-chat-target .chat-guard-switch { font-size: 15px; line-height: 1.5; }
+body .chat-stage textarea,
+body .guard-input-wrap textarea,
+body .live-chat-message { font-size: 18px; line-height: 1.7; }
+body .chat-guard-verdict { font-size: 13px; }
+body .scanner-welcome p,
+body .scanner-chat-target,
+body .scanner-url-control input { font-size: 17px; line-height: 1.7; }
+body .scanner-target-choice button,
+body .scanner-target-field > label,
+body .scanner-agent-fields label,
+body .scanner-agent-fields select,
+body .scanner-attempt-limit,
+body .scanner-attempt-limit select,
+body .scanner-objectives button,
+body .scanner-transform-options button,
+body .scanner-run,
+body .scanner-text-button,
+body .scanner-objective-heading .scanner-text-button,
+body .scanner-transform-heading .scanner-text-button,
+body .scanner-transform-heading { font-size: 15px; line-height: 1.5; }
+body .scanner-action-bar > span,
+body .scanner-job,
+body .scanner-job p,
+body .scanner-job a,
+body .scanner-job > div > span,
+body .scanner-status-line > span:last-child { font-size: 15px; line-height: 1.7; }
+body .scanner-job .scanner-job-target,
+body .scanner-readiness { font-size: 13px; }
+body .scanner-target-choice,
+body .scanner-action-bar { flex-wrap: wrap; }
+body .scanner-chat-target { flex-wrap: wrap; }
+body .guard-use-cases button,
+body .guard-variants button { font-size: 15px; line-height: 1.5; }
+body .guard-category-code { font-size: 12px; line-height: 1.5; }
+body .guard-response h2 { font-size: 16px; line-height: 1.5; }
+body .guard-response-text { font-size: 17px; line-height: 1.7; }
+body .guard-result-label,
+body .guard-stop-note,
+body .guard-response-error,
+body .guard-details,
+body .guard-run-prompt,
+body .guard-footnote { font-size: 14px; line-height: 1.7; }
+body .app-footer,
+body .login-footer { font-size: 12px; line-height: 1.7; }
+body .login-label,
+body .login-error { font-size: 15px; line-height: 1.7; }
+body .login-field input { font-size: 18px; line-height: 1.7; }
+
+/* The embedded Gateway uses this same scale. */
+body .lr-embedded-tools button,
+body .lr-breadcrumb,
+body .lr-case-intro .lr-eyebrow { font-size: 15px; }
+body .lr-embedded-tools .lr-local { font-size: 12px; }
+body .lr-case-intro p { font-size: 19px; line-height: 1.7; }
+body .lr-case-main .lr-chips span,
+body .lr-case-main .lr-composer span,
+body .lr-case-main .lr-under-composer > span,
+body .lr-case-main .lr-trigger > span,
+body .lr-case-main .lr-trigger small,
+body .lr-case-main .lr-panel-title > span,
+body .lr-case-main .lr-replay,
+body .lr-case-main .lr-step small,
+body .lr-case-main .lr-scope-note,
+body .lr-case-main .lr-result-badge,
+body .lr-case-main .lr-details,
+body .lr-case-main .lr-details p,
+body .lr-case-main .lr-meter .lr-eyebrow { font-size: 14px; line-height: 1.7; }
+body .lr-case-main .lr-composer textarea { font-size: 19px; line-height: 1.7; }
+body .lr-case-main .lr-text { font-size: 15px !important; }
+body .lr-case-main .lr-panel-title h2 { font-size: 18px; line-height: 1.5; }
+body .lr-case-main .lr-panel-empty h3 { font-size: 20px; }
+body .lr-case-main .lr-panel-empty p,
+body .lr-case-main .lr-impact > p,
+body .lr-case-main .lr-step strong,
+body .lr-case-main .lr-trigger p,
+body .lr-case-main .lr-placeholder,
+body .lr-case-main .lr-impact-row span,
+body .lr-case-main .lr-meter strong { font-size: 16px; line-height: 1.7; }
+body .lr-drawer table,
+body .lr-drawer th,
+body .lr-data-tabs button,
+body .lr-mail summary,
+body .lr-log { font-size: 14px; line-height: 1.6; }
+body .lr-mail p { font-size: 16px; line-height: 1.7; }
+body .lr-details pre,
+body .lr-log pre,
+body .lr-mail pre { font-size: 13px; }
+body .lr-case-main .lr-chips span { white-space: normal; }
+body .lr-case-main .lr-panel-title { align-items: flex-start; }
+body .lr-case-main .lr-panel-title > span { overflow-wrap: anywhere; }
+body .lr-case-main .lr-under-composer,
+body .lr-case-main .lr-meter { flex-wrap: wrap; }
+body .lr-case-main .lr-under-composer .lr-text { flex-shrink: 0; }
+
+@media (max-width: 1100px) and (min-width: 721px) {
+  body .sidebar { flex-wrap: wrap; gap: 16px; }
+  #navigation { order: 3; flex-basis: 100%; flex-wrap: wrap; }
+  body .sidebar-signout { margin-left: auto; }
+}
+@media (max-width: 720px) {
+  #navigation .nav-link { font-size: 14px; }
+  body .chat-header-actions { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  body .chat-minimal-header { align-items: flex-start; gap: 12px; }
+  body .chat-minimal-header .button,
+  body .chat-header-actions .chat-guard-switch { font-size: 14px; }
+  body .guard-use-cases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .guard-use-cases button { overflow-wrap: anywhere; }
+  body .scanner-agent-fields { grid-template-columns: 1fr; }
+  body .scanner-action-bar > span { max-width: 100%; }
+  body .lr-case-intro p { font-size: 18px; }
+}

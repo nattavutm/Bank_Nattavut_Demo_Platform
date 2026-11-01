@@ -1,0 +1,86 @@
+/* Red is reserved for primary actions and navigation/selection accents.
+   Result and protection-status colors continue to communicate their own state. */
+:root {
+  --accent: #df0b1c;
+  --accent-hover: #c70918;
+  --accent-focus: #ff6975;
+  --accent-surface: #251317;
+}
+
+#navigation .nav-link.active {
+  background: var(--accent) !important;
+  color: #fff !important;
+  box-shadow: none;
+}
+#navigation .nav-link.active:hover {
+  background: var(--accent-hover) !important;
+}
+#navigation .nav-link.active :is(.nav-preview, .nav-tbd) {
+  color: #fff;
+  opacity: 0.8;
+}
+.platform-dropdown a[aria-current='page'] {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+body .chat-stage .composer-send:not(:disabled),
+body .guard-compare-send:not(:disabled),
+body .scanner-run:not(:disabled),
+body .login-submit:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+body .chat-stage .composer-send:not(:disabled):hover,
+body .guard-compare-send:not(:disabled):hover,
+body .scanner-run:not(:disabled):hover,
+body .login-submit:not(:disabled):hover {
+  background: var(--accent-hover);
+}
+body .lr-run:not(:disabled) {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+body .lr-run:not(:disabled):hover {
+  background: var(--accent-hover) !important;
+}
+
+body .scanner-objectives button[aria-pressed='true'],
+body .scanner-target-choice button[aria-pressed='true'],
+body .guard-use-cases button[aria-pressed='true'],
+body .guard-variants button[aria-pressed='true'] {
+  background: var(--accent-surface);
+  border-color: var(--accent);
+  color: #f6f6f6;
+}
+body .scanner-objectives button:not(:disabled):hover,
+body .guard-use-cases button:not(:disabled):hover,
+body .guard-variants button:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+body .lr-breadcrumb > [aria-hidden='true'] {
+  color: var(--accent);
+}
+
+body :is(button, a, input, select, textarea, summary):focus-visible {
+  outline-color: var(--accent-focus);
+}
+body .chat-stage .composer-field:focus-within,
+body .guard-input-wrap:focus-within,
+body .scanner-url-control:focus-within,
+body .login-field:focus-within,
+body .lr-composer:focus-within {
+  border-color: var(--accent-focus);
+}
+
+/* The selected example and its editable prompt share one color treatment. */
+body .guard-playground:has(.guard-use-cases button[aria-pressed='true']) .guard-input-wrap {
+  background: var(--accent-surface);
+  border-color: var(--accent);
+}
+
+/* The animated progress glyph must remain visible on the red Gateway button. */
+body .lr-run:not(:disabled) .lr-spinner {
+  border-color: #ffffff55;
+  border-top-color: #fff;
+}
