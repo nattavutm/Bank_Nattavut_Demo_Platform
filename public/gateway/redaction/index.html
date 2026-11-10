@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mask Sensitive Data Before Inference · AI Gateway</title>
+    <title>Block Sensitive Data Before Inference · AI Gateway</title>
     <link rel="stylesheet" href="/gateway/app.css" />
     <link rel="stylesheet" href="/typography.css" />
     <link rel="stylesheet" href="/theme-accents.css" />
@@ -13,10 +13,10 @@
   <body class="lr-body">
     <main id="lr-app" class="lr-app lr-main redaction">
       <p class="redaction-kicker">AI Gateway / Guardrails</p>
-      <h1>Mask Sensitive Data Before Inference</h1>
+      <h1>Block Sensitive Data Before Inference</h1>
       <p>Han Solo requests a THB 1,250 refund for the Millennium Falcon parking fee. The synthetic request includes a payment card, Leia’s email, a dispatch phone number, and a hangar API credential.</p>
 
-      <details class="redaction-panel">
+      <details id="redaction-input" class="redaction-panel">
         <summary>Synthetic request</summary>
         <dl>
           <dt>Payment card</dt><dd><code>4111 1111 1111 1111</code></dd>
@@ -25,38 +25,28 @@
           <dt>Hangar API authorization</dt><dd><code>Basic cjJkMjpERU1PLU5PVC1BLVJFQUwtU0VDUkVU</code></dd>
         </dl>
       </details>
-      <details class="redaction-panel">
-        <summary>Expected masking example</summary>
-        <p>When the configured rules match, the four sensitive values appear as <code>****</code>. The amount and purpose stay readable.</p>
-        <p class="redaction-note">Illustrative example. See the recorded outcome below.</p>
-      </details>
+      <div class="redaction-actions" aria-label="Demo steps">
+        <button id="redaction-original" type="button">1. Show original request</button>
+        <button id="redaction-send" type="button" disabled>2. Send through Gateway</button>
+      </div>
 
       <div class="redaction-comparison">
         <section class="redaction-panel" aria-labelledby="redaction-direct">
           <h2 id="redaction-direct">Without Gateway</h2>
-          <p class="redaction-label">Recorded direct request</p>
+          <p class="redaction-label">Recorded direct request · synthetic baseline</p>
           <p>The synthetic summarizer received all four original values and returned a summary.</p>
         </section>
         <section class="redaction-panel" aria-labelledby="redaction-gateway">
           <h2 id="redaction-gateway">With Gateway</h2>
-          <p class="redaction-label">Recorded EKS run · 10 November 2026</p>
-          <p class="redaction-outcome"><strong>0 of 4 fields masked</strong> · HTTP 200</p>
-          <p>The upstream received the four original values. The summary preserved THB 1,250 and the parking fee.</p>
-          <details>
-            <summary>Upstream receipt and request ID</summary>
-            <dl>
-              <dt>Payment card</dt><dd>Unmasked</dd>
-              <dt>Leia’s contact email</dt><dd>Unmasked</dd>
-              <dt>Rebel dispatch phone</dt><dd>Unmasked</dd>
-              <dt>Hangar API authorization</dt><dd>Unmasked</dd>
-            </dl>
-            <p>Request ID <code>01a1c614-0efc-7da1-96ce-7045b4715ac7</code></p>
-          </details>
+          <p class="redaction-label">Live EKS run</p>
+          <div id="redaction-result" aria-live="polite">
+            <p>Send the synthetic request to see how the Gateway handles it.</p>
+          </div>
         </section>
       </div>
 
       <footer>
-        <span>Recorded comparison. Live runs from this page require an EKS connection.</span>
+        <span>Only the synthetic refund fixture is sent.</span>
         <a href="https://portal.xdr.trendmicro.com/index.html#/app/ai-app-sec?path=%2Fgateway%2Fevents" target="_blank" rel="noopener noreferrer">Open Vision One Events ↗</a>
       </footer>
     </main>

@@ -1,4 +1,5 @@
 import {gatewayApi} from './gateway/index.js';
+import {redactionApi} from './gateway/redaction.js';
 import { scannerApi, scannerService } from './scanner.js';
 import { authorize } from './auth.js';
 import {MODEL,GUARD_URL} from './constants.js';
@@ -86,9 +87,13 @@ export const app = {
 // Every request passes authentication, including static application assets.
 export default {async fetch(request,env){
   const service=await scannerService(request,env,inspectGuard);if(service)return service;
-  const auth=await authorize(request,env);if(auth)return auth;
   const path = new URL(request.url).pathname;
-  const response = path.startsWith('/api/gateway/') ? await gatewayApi(request, env) : await app.fetch(request, env);
+  if (path === '/api/gateway/redaction/runner/claim' || path === '/api/gateway/redaction/runner/finish')
+    return redactionApi(request, env, true);
+  const auth=await authorize(request,env);if(auth)return auth;
+  const response = path === '/api/gateway/redaction' || path.startsWith('/api/gateway/redaction/')
+    ? await redactionApi(request, env)
+    : path.startsWith('/api/gateway/') ? await gatewayApi(request, env) : await app.fetch(request, env);
   const gatewayView = ['/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html'].includes(path);
   const headers = new Headers(response.headers);
   headers.set('Cache-Control', 'no-store');

@@ -2,6 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bank-nattavut-demo-platform",
   "main": "src/worker.js",
+  "vars": {
+    "REDACTION_RUNNER_PUBLIC_KEY": "MCowBQYDK2VwAyEADGDIuHWd/Y+2qC6xdAxb6yKWXZubnXEu+Q1cM6rByxU="
+  },
   "compatibility_date": "2026-10-29",
   "assets": {
     "directory": "./public",

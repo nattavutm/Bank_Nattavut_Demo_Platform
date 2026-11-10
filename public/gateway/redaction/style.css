@@ -81,3 +81,22 @@
     gap: 0;
   }
 }
+
+.redaction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.redaction .redaction-actions button {
+  padding: 9px 14px;
+  border: 1px solid #444;
+  border-radius: 20px;
+}
+
+.redaction #redaction-send:not(:disabled) {
+  background: var(--accent, #ae1425);
+  border-color: transparent;
+  color: #fff;
+}
