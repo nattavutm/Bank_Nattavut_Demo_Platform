@@ -1,11 +1,12 @@
 /* One disclosure/flyout pattern for every module. Navigation never starts a scan. */
 (() => {
   const gwGroups = [
-    { name: "Data leakage", codes: ["s01", "s02", "s03", "s04", "s05"] },
+    { name: "Data leakage", codes: ["card-redaction", "s01", "s02", "s03", "s04", "s05"] },
     { name: "Prompt & tool attacks", codes: ["s06", "s07", "s08", "s09"] },
     { name: "Agent misuse", codes: ["s10", "s11", "s12"] },
   ];
   const gatewayCases = [
+    { code: "card-redaction", card_title: "Mask Sensitive Data Before Inference" },
     { code: "s01", card_title: "CEO salary" },
     { code: "s02", card_title: "Project Falcon" },
     { code: "s03", card_title: "Export customer PII" },

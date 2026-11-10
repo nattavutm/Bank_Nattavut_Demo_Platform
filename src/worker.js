@@ -87,7 +87,13 @@ export const app = {
 export default {async fetch(request,env){
   const service=await scannerService(request,env,inspectGuard);if(service)return service;
   const auth=await authorize(request,env);if(auth)return auth;
-  const response=new URL(request.url).pathname.startsWith('/api/gateway/')?await gatewayApi(request,env):await app.fetch(request,env);
-  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Frame-Options',['/gateway/','/gateway/index.html'].includes(new URL(request.url).pathname)?'SAMEORIGIN':'DENY');if(['/gateway/','/gateway/index.html'].includes(new URL(request.url).pathname))headers.set('Content-Security-Policy',"frame-ancestors 'self'");headers.set('X-Content-Type-Options','nosniff');
+  const path = new URL(request.url).pathname;
+  const response = path.startsWith('/api/gateway/') ? await gatewayApi(request, env) : await app.fetch(request, env);
+  const gatewayView = ['/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html'].includes(path);
+  const headers = new Headers(response.headers);
+  headers.set('Cache-Control', 'no-store');
+  headers.set('X-Frame-Options', gatewayView ? 'SAMEORIGIN' : 'DENY');
+  if (gatewayView) headers.set('Content-Security-Policy', "frame-ancestors 'self'");
+  headers.set('X-Content-Type-Options', 'nosniff');
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }};

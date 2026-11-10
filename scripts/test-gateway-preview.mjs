@@ -17,6 +17,8 @@ test("Gateway API and all its assets require the existing platform login", async
     "/api/gateway/data/customers",
     "/gateway/index.html",
     "/gateway/app.js",
+    "/gateway/redaction/",
+    "/gateway/redaction/frame.js",
   ]) {
     const r = await worker.fetch(new Request("https://demo.test" + path), {});
     assert.equal(r.status, path.startsWith("/api/") ? 401 : 303);
@@ -92,18 +94,24 @@ test("Only the authenticated Gateway view permits same-origin framing", async ()
     env,
   );
   const cookie = login.headers.get("set-cookie").split(";")[0];
-  for (const path of ["/gateway/index.html", "/gateway/", "/", "/app.js"]) {
+  const framedPages = [
+    "/gateway/index.html",
+    "/gateway/",
+    "/gateway/redaction/index.html",
+    "/gateway/redaction/",
+  ];
+  for (const path of [...framedPages, "/", "/app.js", "/gateway/redaction/frame.js"]) {
     const r = await worker.fetch(
       new Request(origin + path, { headers: { Cookie: cookie } }),
       env,
     );
     assert.equal(
       r.headers.get("X-Frame-Options"),
-      ["/gateway/index.html", "/gateway/"].includes(path)
+      framedPages.includes(path)
         ? "SAMEORIGIN"
         : "DENY",
     );
-    if (["/gateway/index.html", "/gateway/"].includes(path))
+    if (framedPages.includes(path))
       assert.equal(
         r.headers.get("Content-Security-Policy"),
         "frame-ancestors 'self'",
