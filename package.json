@@ -9,7 +9,7 @@
     "deploy": "wrangler deploy",
     "build": "npm run check",
     "deploy:check": "wrangler deploy --dry-run --outdir .wrangler/deploy-check",
-    "test": "node --test scripts/test-worker.mjs scripts/test-auth.mjs scripts/test-scanner.mjs scripts/test-scanner-state.mjs scripts/test-scanner-plan.mjs scripts/test-gateway-preview.mjs scripts/test-flow-animation.mjs scripts/test-redaction-debug.mjs"
+    "test": "node --test scripts/test-worker.mjs scripts/test-auth.mjs scripts/test-scanner.mjs scripts/test-scanner-state.mjs scripts/test-scanner-plan.mjs scripts/test-gateway-preview.mjs scripts/test-flow-animation.mjs scripts/test-redaction-debug.mjs scripts/test-redaction-api.mjs"
   },
   "engines": {
     "node": ">=22.0.0"

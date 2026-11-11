@@ -57,6 +57,7 @@ function renderDebug() {
     ["Request ID", result?.gatewayRequestId || unknown],
     ["Policy decision", result?.policyDecision || "Not reported by runner"],
     ["Matched policy", result?.matchedPolicy || "Not reported by runner"],
+    ["Matched rule IDs", result?.gatewayRuleIds?.join("\n") || "Not reported by runner"],
   ]);
   renderRows("#debug-upstream", [
     ["Receipt", result?.upstreamReceived === true ? "Received" : result?.upstreamReceived === false ? "No receipt observed" : unknown],
@@ -109,10 +110,18 @@ async function jsonResponse(response) {
 
 function showResult(result) {
   const masked = result.fields.filter((field) => field === "masked").length;
-  show(result.upstreamReceived
+  const blocked = result.gatewayStatus >= 400 && result.gatewayErrorCode === "policy_violation";
+  show(blocked && result.upstreamReceived === false
+    ? `Blocked by Gateway · HTTP ${result.gatewayStatus} · policy_violation`
+    : result.upstreamReceived
     ? `Upstream received the request · ${masked} of 4 fields masked · HTTP ${result.gatewayStatus}`
     : `No upstream receipt · HTTP ${result.gatewayStatus}`);
   panel.firstChild.className = "redaction-outcome";
+  if (blocked && result.upstreamReceived === false) {
+    const stopped = document.createElement("p");
+    stopped.textContent = "The Gateway denied the request before model delivery. No sensitive values were observed at the synthetic model.";
+    panel.append(stopped);
+  }
   const fields = document.createElement("dl");
   labels.forEach((label, index) => {
     const term = document.createElement("dt");

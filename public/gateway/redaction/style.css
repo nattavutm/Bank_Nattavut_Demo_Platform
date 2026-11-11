@@ -122,7 +122,7 @@
 .redaction .debug-grid h3 { margin: 0 0 12px; font-size: 16px; font-weight: 500; color: #eee; }
 .redaction .debug-grid dl { display: block; margin: 0; font-size: 14px; line-height: 1.5; }
 .debug-grid dt { color: #8f8f8f; margin-top: 12px; }
-.debug-grid dd { margin: 3px 0 0; overflow-wrap: anywhere; }
+.debug-grid dd { margin: 3px 0 0; overflow-wrap: anywhere; white-space: pre-line; }
 .redaction .debug-notice { margin: 22px 0; padding: 13px 16px; background: #24211c; border-radius: 10px; color: #e6c699; font-size: 14px; line-height: 1.6; }
 .redaction-debug details { margin-top: 16px; border-top: 1px solid #333; padding-top: 16px; }
 .redaction-debug details summary { font-size: 14px; font-weight: 400; color: #bcbcbc; }

@@ -29,3 +29,14 @@ test("only complete masking observations say all four fields were masked", () =>
   result.fields[2] = "masked";
   assert.match(diagnosticObservation(result), /Verify the policy decision/);
 });
+
+test("policy denial requires an explicit error code and preserves conflicting evidence", () => {
+  const denied = diagnosticResult({ gatewayStatus: 400, gatewayErrorCode: "policy_violation",
+    upstreamReceived: false, gatewayRuleIds: ["sensitive_information.default.cr_003n_001", "Bearer secret"] });
+  assert.equal(denied.policyDecision, "Block · policy_violation");
+  assert.deepEqual(denied.gatewayRuleIds, ["sensitive_information.default.cr_003n_001"]);
+  assert.match(diagnosticObservation(denied), /No upstream receipt was observed/);
+  denied.upstreamReceived = true;
+  assert.match(diagnosticObservation(denied), /conflicting evidence/);
+  assert.equal(diagnosticResult({ gatewayStatus: 200, gatewayErrorCode: "policy_violation" }).gatewayErrorCode, null);
+});

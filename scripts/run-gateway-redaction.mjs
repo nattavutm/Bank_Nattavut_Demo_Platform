@@ -53,7 +53,13 @@ async function run() {
       { role: "user", content: fixtures.card.body },
     ],
   }), 30_000);
-  const reply = (await response.json().catch(() => null))?.choices?.[0]?.message?.content;
+  const responseBody = await response.json().catch(() => null);
+  const reply = responseBody?.choices?.[0]?.message?.content;
+  const policyViolation = response.status >= 400 && responseBody?.error?.code === "policy_violation";
+  // Export rule identifiers only, never the raw error message or headers.
+  const gatewayRuleIds = policyViolation && typeof responseBody?.error?.message === "string"
+    ? [...new Set(responseBody.error.message.match(/(?:sensitive_information|harmful_content|prompt_attack)\.default\.[a-z0-9_]+/g) || [])].slice(0, 12)
+    : [];
   const { receipts } = await control("/runs/" + runId, "GET");
   if (receipts.length > 1) throw new Error("Unexpected number of upstream receipts.");
   const received = receipts[0]?.receivedText;
@@ -70,6 +76,8 @@ async function run() {
     summaryPreserved: typeof reply === "string" && reply.includes("THB 1,250") &&
       reply.includes("Millennium Falcon parking fee"),
     fields,
+    gatewayErrorCode: policyViolation ? "policy_violation" : null,
+    gatewayRuleIds,
   };
 }
 

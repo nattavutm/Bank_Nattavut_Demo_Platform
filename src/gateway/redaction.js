@@ -57,12 +57,23 @@ function verifiedResult(result) {
       result.fields.some((value) => !outcomes.has(value))) throw new Fault(400, "Invalid result.");
   if (result.gatewayRequestId !== null && !jobId.test(result.gatewayRequestId))
     throw new Fault(400, "Invalid Gateway request ID.");
+  if (result.gatewayErrorCode !== undefined && result.gatewayErrorCode !== null &&
+      result.gatewayErrorCode !== "policy_violation") throw new Fault(400, "Invalid Gateway error code.");
+  if (result.gatewayErrorCode === "policy_violation" && result.gatewayStatus < 400)
+    throw new Fault(400, "A successful response cannot establish a policy denial.");
+  const rules = result.gatewayRuleIds ?? [];
+  if (!Array.isArray(rules) || rules.length > 12 || rules.some((rule) =>
+    typeof rule !== "string" || rule.length > 96 ||
+    !/^(?:sensitive_information|harmful_content|prompt_attack)\.default\.[a-z0-9_]+$/.test(rule)))
+    throw new Fault(400, "Invalid Gateway rule identifiers.");
   return {
     gatewayStatus: result.gatewayStatus,
     gatewayRequestId: result.gatewayRequestId,
     upstreamReceived: result.upstreamReceived,
     summaryPreserved: result.summaryPreserved,
     fields: result.fields,
+    gatewayErrorCode: result.gatewayErrorCode ?? null,
+    gatewayRuleIds: rules,
   };
 }
 
