@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/gateway/app.css" />
     <link rel="stylesheet" href="/typography.css" />
     <link rel="stylesheet" href="/theme-accents.css" />
+    <link rel="stylesheet" href="/guard-explainer.css" />
     <link rel="stylesheet" href="/gateway/redaction/style.css" />
     <script type="module" src="/gateway/redaction/frame.js"></script>
   </head>
@@ -15,6 +16,8 @@
       <p class="redaction-kicker">AI Gateway / Guardrails</p>
       <h1>Mask Sensitive Data Before Inference</h1>
       <p>Han Solo requests a THB 1,250 refund for the Millennium Falcon parking fee. The synthetic request includes a payment card, Leia’s email, a dispatch phone number, and a hangar API credential.</p>
+
+      <div id="mask-explainer"></div>
 
       <details id="redaction-input" class="redaction-panel">
         <summary>Synthetic request</summary>

@@ -2,6 +2,22 @@
   max-width: 1360px;
 }
 
+.mask-explainer { max-width: none; margin: 30px 0 40px; }
+.mask-explainer .ge-node h3 { font-weight: 400; }
+.mask-explainer .ge-desktop-flow { column-gap: clamp(24px, 3vw, 50px); }
+.mask-explainer.ge-mode-without .ge-desktop-flow > .ge-app { position: relative; grid-column: 2; grid-row: 1 / 4; left: auto; top: auto; transform: none; width: auto; }
+.mask-explainer.ge-mode-without .ge-scenarios { visibility: visible; }
+.mask-explainer .mask-payload { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px 16px; min-height: 50px; margin: 14px 0 4px; font-size: 14px; }
+.mask-payload > span, .mask-illustration-label { color: #929292; }
+.mask-payload code { border: 1px solid #393939; border-radius: 9px; padding: 7px 12px; color: #ccc; font-size: 13px; overflow-wrap: anywhere; }
+.mask-payload[data-masked="true"] code { color: #90d7b6; border-color: #3a6253; background: #162820; }
+.mask-explainer .ge-scenarios { align-items: center; }
+.mask-explainer .mask-illustration-label { font-size: 12px; margin-right: 4px; }
+.mask-explainer .ge-pause[hidden] { display: none; }
+.mask-explainer .ge-pause { margin-left: auto; border: 1px solid #343434; border-radius: 50%; }
+@media (max-width: 900px) { .mask-explainer .ge-mobile-flow { gap: 28px 18px; } }
+@media (max-width: 600px) { .mask-explainer .ge-toggle button { font-size: 11px; } .mask-explainer .mask-payload { justify-content: flex-start; } }
+
 .redaction h1 {
   margin: 14px 0 8px;
   font-size: clamp(29px, 4vw, 45px);

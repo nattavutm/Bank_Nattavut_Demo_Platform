@@ -1,8 +1,11 @@
 import { diagnosticResult, diagnosticObservation, requestTemplate } from "./debug.js";
 import { fixtureFields, fixtureBody } from "./fixture.js";
 import { inspectRedaction } from "./observation.js";
+import { mountMaskExplainer } from "./mask-explainer.js";
 
 const page = document.querySelector("#lr-app");
+const destroyExplainer = mountMaskExplainer(document.querySelector("#mask-explainer"));
+window.addEventListener("pagehide", destroyExplainer, { once: true });
 
 new ResizeObserver(() => {
   parent.postMessage({
