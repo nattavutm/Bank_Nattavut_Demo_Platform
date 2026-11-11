@@ -19,11 +19,10 @@ const pauseIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const playIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>';
 const sourceNodes = () => '<div class="ge-sources">' + sources.map((source) => '<div data-mask-source="' + source.id + '">' + icon(source.icon) + "<span>" + source.name + "</span></div>").join("") + "</div>";
 const node = (name, label, image) => '<div class="ge-node ge-' + name + '" data-mask-node="' + name + '">' + icon(image) + "<h3>" + label + "</h3></div>";
-const check = (stage, label) => '<div class="ge-check-slot ge-' + stage + '-slot"><div class="ge-check" data-mask-node="' + stage + '"><span class="ge-guard-symbol"><img src="/brand/guard-flow-symbol.png" width="58" height="51" alt="TrendAI"></span><h3>' + label + '</h3><span class="ge-decision" data-mask-decision="' + stage + '"></span></div></div>';
+const gatewayNode = () => '<div class="ge-node mask-gateway" data-mask-node="gateway"><span class="ge-guard-symbol"><img src="/brand/guard-flow-symbol.png" width="58" height="51" alt="TrendAI"></span><h3>AI Gateway</h3><div class="mask-gateway-policy"><span>Data redaction</span><span class="ge-decision" data-mask-decision="input"></span></div><div class="mask-gateway-policy"><span>Response inspection</span><span class="ge-decision" data-mask-decision="output"></span></div></div>';
 const graph = (mobile) => '<div role="img" class="ge-graph ' + (mobile ? 'ge-mobile-flow' : 'ge-desktop-flow') + '">' +
   (mobile ? '<div class="ge-mobile-sources">' + sourceNodes() + "</div>" : sourceNodes()) +
-  node("app", "AI Application", "app") + check("input", "Sensitive data redaction") +
-  check("output", "Response inspection") + node("model", "LLM", "model") + "</div>";
+  node("app", "AI Application", "app") + gatewayNode() + node("model", "LLM", "model") + "</div>";
 
 export function mountMaskExplainer(host) {
   if (!host) return () => {};
@@ -38,7 +37,7 @@ export function mountMaskExplainer(host) {
   let destroyed = false, visible = false, drawFrame, routes = [], duration = 1, flight = 0, timeline;
   const all = (selector, action) => section.querySelectorAll(selector).forEach(action);
   const phases = () => state.mode === "without" ? ["source", "model", "return", "delivered"]
-    : ["source", "input-check", "redact", "model", "output-check", "output-allow", "delivered"];
+    : ["source", "gateway", "redact", "model", "model-return", "gateway-return", "delivered"];
   const paused = () => state.paused || reduced.matches || !visible || document.hidden;
 
   function draw() {
@@ -59,8 +58,7 @@ export function mountMaskExplainer(host) {
           y: r.top - rect.top + (side === "bottom" ? r.height : side === "top" ? 0 : r.height * fraction) };
       };
       const app = graph.querySelector('[data-mask-node="app"]'), model = graph.querySelector('[data-mask-node="model"]');
-      const input = graph.querySelector('[data-mask-node="input"] .ge-guard-symbol');
-      const output = graph.querySelector('[data-mask-node="output"] .ge-guard-symbol');
+      const gateway = graph.querySelector('[data-mask-node="gateway"]');
       const add = (a, b, phase, source, points) => {
         const route = motion.addRoute(svg, points ? motion.rounded(points) : motion.route(a, b, vertical));
         route.dataset.maskRoute = phase;
@@ -73,13 +71,10 @@ export function mountMaskExplainer(host) {
       });
       const forwardSide = vertical ? "bottom" : "right", backwardSide = vertical ? "top" : "left";
       if (state.mode === "with") {
-        add(at(app, forwardSide, .25), at(input, backwardSide), "input-check");
-        add(at(input, forwardSide), at(model, backwardSide, .25), "model");
-        add(at(model, backwardSide, .75), at(output, forwardSide), "output-check");
-        add(at(output, backwardSide), at(app, forwardSide, .75), "output-allow");
+        add(at(app, forwardSide), at(gateway, backwardSide), "gateway");
+        add(at(gateway, forwardSide), at(model, backwardSide), "model");
       } else {
-        add(at(app, forwardSide, .25), at(model, backwardSide, .25), "model");
-        add(at(model, backwardSide, .75), at(app, forwardSide, .75), "return");
+        add(at(app, forwardSide), at(model, backwardSide), "model");
       }
       graph.prepend(svg);
     });
@@ -106,18 +101,21 @@ export function mountMaskExplainer(host) {
     });
     all("[data-mask-decision]", (label) => {
       const input = label.dataset.maskDecision === "input";
-      const ready = seen.has(input ? "redact" : "output-allow");
+      const ready = seen.has(input ? "redact" : "gateway-return");
       label.textContent = withGateway && ready ? input && sensitive ? "Redact" : "Allow" : "";
       label.dataset.decision = ready && withGateway ? "allow" : "";
     });
     routes = [];
     all(".ge-route", (group) => {
       const shared = group.dataset.maskRoute === "source", returning = phase === "delivered" && shared;
-      const active = (shared ? phase === "source" || returning : group.dataset.maskRoute === phase) &&
+      const modelReturn = group.dataset.maskRoute === "model" && ["model-return", "return"].includes(phase);
+      const gatewayReturn = group.dataset.maskRoute === "gateway" && phase === "gateway-return";
+      const reverse = returning || modelReturn || gatewayReturn;
+      const active = (shared ? phase === "source" || returning : group.dataset.maskRoute === phase || modelReturn || gatewayReturn) &&
         (!group.dataset.maskSourceRoute || group.dataset.maskSourceRoute === caller.id) && !!group.closest(".ge-graph").offsetWidth && !reduced.matches;
       group.classList.toggle("is-traveling", active);
-      group.classList.toggle("ge-route-return", returning || ["return", "output-check", "output-allow"].includes(group.dataset.maskRoute));
-      if (active) routes.push({ group, reverse: returning });
+      group.classList.toggle("ge-route-return", reverse);
+      if (active) routes.push({ group, reverse });
     });
     flight = Math.max(0, ...routes.map(({ group }) => motion.travelMs(group.querySelector(".ge-pipe-track").getTotalLength())));
     duration = flight + (phase === "redact" ? 800 : phase === "delivered" ? 700 : 200);

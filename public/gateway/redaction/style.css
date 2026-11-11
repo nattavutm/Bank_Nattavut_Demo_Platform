@@ -4,8 +4,14 @@
 
 .mask-explainer { max-width: none; margin: 30px 0 40px; }
 .mask-explainer .ge-node h3 { font-weight: 400; }
-.mask-explainer .ge-desktop-flow { column-gap: clamp(24px, 3vw, 50px); }
-.mask-explainer.ge-mode-without .ge-desktop-flow > .ge-app { position: relative; grid-column: 2; grid-row: 1 / 4; left: auto; top: auto; transform: none; width: auto; }
+.mask-explainer .ge-desktop-flow { column-gap: clamp(24px, 3vw, 50px); grid-template-rows: 1fr; min-height: 310px; }
+.mask-explainer .ge-desktop-flow > .ge-sources, .mask-explainer .ge-desktop-flow > .ge-node { grid-row: 1; }
+.mask-explainer .mask-gateway { grid-column: 3; min-height: 300px; padding: 25px 12px; }
+.mask-explainer .mask-gateway h3 { margin: 14px 0 18px; }
+.mask-gateway-policy { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 32px; font-size: 12px; color: #aaa; }
+.mask-gateway-policy .ge-decision { font-size: 12px; min-height: 24px; min-width: 50px; padding: 2px 9px; }
+.mask-explainer.ge-mode-without .ge-desktop-flow > .ge-app { position: relative; grid-column: 2; grid-row: 1; left: auto; top: auto; transform: none; width: auto; }
+.mask-explainer.ge-mode-without .mask-gateway { visibility: hidden; }
 .mask-explainer.ge-mode-without .ge-scenarios { visibility: visible; }
 .mask-explainer .mask-payload { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px 16px; min-height: 50px; margin: 14px 0 4px; font-size: 14px; }
 .mask-payload > span, .mask-illustration-label { color: #929292; }
@@ -15,7 +21,11 @@
 .mask-explainer .mask-illustration-label { font-size: 12px; margin-right: 4px; }
 .mask-explainer .ge-pause[hidden] { display: none; }
 .mask-explainer .ge-pause { margin-left: auto; border: 1px solid #343434; border-radius: 50%; }
-@media (max-width: 900px) { .mask-explainer .ge-mobile-flow { gap: 28px 18px; } }
+@media (max-width: 900px) {
+  .mask-explainer .ge-mobile-flow { grid-template-columns: 1fr; gap: 38px; }
+  .mask-explainer .ge-mobile-flow > .mask-gateway { grid-column: 1; grid-row: 3; min-height: 250px; padding: 25px; }
+  .mask-explainer .ge-mobile-flow > .ge-model { grid-column: 1; grid-row: 4; }
+}
 @media (max-width: 600px) { .mask-explainer .ge-toggle button { font-size: 11px; } .mask-explainer .mask-payload { justify-content: flex-start; } }
 
 .redaction h1 {
