@@ -2,21 +2,9 @@
 // A missing receipt or non-2xx status is never promoted to a Gateway deny.
 const fieldStates = new Set(["masked", "unmasked", "not confirmed", "no upstream receipt"]);
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-
-// This is the configured fixture template, not an observed network capture.
-export const requestTemplate = {
-  model: "r5r5-summary",
-  messages: [
-    { role: "system", content: "Demo run: <created by EKS runner>" },
-    { role: "user", content: [
-      "Demo refund · THB 1,250 · Millennium Falcon parking fee",
-      "Payment card: 4111 1111 1111 1111",
-      "Leia's contact email: leia.organa@example.com",
-      "Rebel dispatch phone: +1 202-555-0142",
-      "Hangar API Authorization: Basic cjJkMjpERU1PLU5PVC1BLVJFQUwtU0VDUkVU",
-    ].join("\n") },
-  ],
-};
+import { fixtureBody, fixtureFields } from "./fixture.js";
+import { inspectRedaction } from "./observation.js";
+export { requestTemplate } from "./fixture.js";
 
 export function diagnosticResult(value) {
   if (!value || typeof value !== "object") return null;
@@ -36,6 +24,7 @@ export function diagnosticResult(value) {
       /^(?:sensitive_information|harmful_content|prompt_attack)\.default\.[a-z0-9_]+$/.test(rule)).slice(0, 12) : [],
     policyDecision: denied ? "Block · policy_violation" : "Not reported by runner",
     matchedPolicy: "Not reported by runner",
+    receivedText: inspectRedaction(fixtureBody, value.receivedText, fixtureFields).receivedText,
   };
 }
 

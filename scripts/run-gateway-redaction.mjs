@@ -2,6 +2,7 @@ import { createPrivateKey, randomUUID, sign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { fixtures } from "/app/public/gateway/demo-cases.js";
+import { inspectRedaction } from "./observation.mjs";
 
 const origin = "https://demo.nattavut.online";
 const path = "/api/gateway/redaction/runner/";
@@ -63,19 +64,15 @@ async function run() {
   const { receipts } = await control("/runs/" + runId, "GET");
   if (receipts.length > 1) throw new Error("Unexpected number of upstream receipts.");
   const received = receipts[0]?.receivedText;
-  const fields = fixtures.card.fields.map(({ label, value }) => {
-    if (received === undefined) return "no upstream receipt";
-    if (received.includes(value)) return "unmasked";
-    const line = received.split("\n").find((text) => text.startsWith(label + ":"));
-    return line?.slice(label.length + 1).includes("*") ? "masked" : "not confirmed";
-  });
+  const observation = inspectRedaction(fixtures.card.body, received, fixtures.card.fields);
   return {
     gatewayStatus: response.status,
     gatewayRequestId: response.headers.get("x-request-id"),
     upstreamReceived: received !== undefined,
     summaryPreserved: typeof reply === "string" && reply.includes("THB 1,250") &&
       reply.includes("Millennium Falcon parking fee"),
-    fields,
+    fields: observation.fields,
+    receivedText: observation.receivedText,
     gatewayErrorCode: policyViolation ? "policy_violation" : null,
     gatewayRuleIds,
   };

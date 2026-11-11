@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { redactionApi } from "../src/gateway/redaction.js";
+import { fixtureBody, fixtureFields } from "../public/gateway/redaction/fixture.js";
 
 function database() {
   const sqlite = new DatabaseSync(":memory:");
@@ -55,5 +56,18 @@ test("signed policy-denial evidence round-trips without exposing secrets and sta
     assert.equal(observed.result.gatewayErrorCode, "policy_violation");
     assert.deepEqual(observed.result.gatewayRuleIds, result.gatewayRuleIds);
     assert.ok(!JSON.stringify(observed).includes("must-not-return"));
+    const maskedId = (await (await browser(base, "POST")).json()).id;
+    const maskedClaim = randomUUID();
+    assert.equal((await (await runner("claim", { claim: maskedClaim })).json()).id, maskedId);
+    const receivedText = fixtureFields.reduce((text, field) => text.replace(field.value, "[REDACTED]"), fixtureBody);
+    const masked = { ...result, gatewayStatus: 200, gatewayRequestId: randomUUID(), upstreamReceived: true,
+      summaryPreserved: true, fields: Array(4).fill("masked"), gatewayErrorCode: null, gatewayRuleIds: [], receivedText };
+    assert.equal((await runner("finish", { id: maskedId, claim: maskedClaim,
+      result: { ...masked, receivedText: "Bearer must-not-return" } })).status, 400);
+    assert.equal((await runner("finish", { id: maskedId, claim: maskedClaim,
+      result: { ...masked, fields: Array(4).fill("unmasked") } })).status, 400);
+    assert.equal((await runner("finish", { id: maskedId, claim: maskedClaim, result: masked })).status, 200);
+    const maskedObserved = await (await browser(base + "/" + maskedId)).json();
+    assert.equal(maskedObserved.result.receivedText, receivedText);
   } finally { db.close(); }
 });

@@ -1,4 +1,6 @@
 import { Fault, json, readJson, sameOrigin } from "./runtime/util.js";
+import { fixtureBody, fixtureFields } from "../../public/gateway/redaction/fixture.js";
+import { inspectRedaction } from "../../public/gateway/redaction/observation.js";
 
 const base = "/api/gateway/redaction";
 const jobId = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
@@ -66,6 +68,11 @@ function verifiedResult(result) {
     typeof rule !== "string" || rule.length > 96 ||
     !/^(?:sensitive_information|harmful_content|prompt_attack)\.default\.[a-z0-9_]+$/.test(rule)))
     throw new Fault(400, "Invalid Gateway rule identifiers.");
+  const observation = inspectRedaction(fixtureBody, result.receivedText, fixtureFields);
+  if (result.receivedText !== undefined && result.receivedText !== null &&
+      (!result.upstreamReceived || observation.receivedText !== result.receivedText ||
+        observation.fields.some((value, i) => value !== result.fields[i])))
+    throw new Fault(400, "Invalid synthetic receipt.");
   return {
     gatewayStatus: result.gatewayStatus,
     gatewayRequestId: result.gatewayRequestId,
@@ -74,6 +81,7 @@ function verifiedResult(result) {
     fields: result.fields,
     gatewayErrorCode: result.gatewayErrorCode ?? null,
     gatewayRuleIds: rules,
+    receivedText: observation.receivedText,
   };
 }
 

@@ -6,7 +6,7 @@
     { name: "Agent misuse", codes: ["s10", "s11", "s12"] },
   ];
   const gatewayCases = [
-    { code: "card-redaction", card_title: "Block Sensitive Data Before Inference" },
+    { code: "card-redaction", card_title: "Mask Sensitive Data Before Inference" },
     { code: "s01", card_title: "CEO salary" },
     { code: "s02", card_title: "Project Falcon" },
     { code: "s03", card_title: "Export customer PII" },

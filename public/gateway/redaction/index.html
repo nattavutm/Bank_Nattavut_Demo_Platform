@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Block Sensitive Data Before Inference · AI Gateway</title>
+    <title>Mask Sensitive Data Before Inference · AI Gateway</title>
     <link rel="stylesheet" href="/gateway/app.css" />
     <link rel="stylesheet" href="/typography.css" />
     <link rel="stylesheet" href="/theme-accents.css" />
@@ -13,7 +13,7 @@
   <body class="lr-body">
     <main id="lr-app" class="lr-app lr-main redaction">
       <p class="redaction-kicker">AI Gateway / Guardrails</p>
-      <h1>Block Sensitive Data Before Inference</h1>
+      <h1>Mask Sensitive Data Before Inference</h1>
       <p>Han Solo requests a THB 1,250 refund for the Millennium Falcon parking fee. The synthetic request includes a payment card, Leia’s email, a dispatch phone number, and a hangar API credential.</p>
 
       <details id="redaction-input" class="redaction-panel">
@@ -36,6 +36,7 @@
           <h2 id="redaction-direct">Without Gateway</h2>
           <p class="redaction-label">Recorded direct request · synthetic baseline</p>
           <p>The synthetic summarizer received all four original values and returned a summary.</p>
+          <dl id="redaction-baseline-fields" class="redaction-values" hidden></dl>
         </section>
         <section class="redaction-panel" aria-labelledby="redaction-gateway">
           <h2 id="redaction-gateway">With Gateway</h2>

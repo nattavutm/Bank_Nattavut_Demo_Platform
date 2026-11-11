@@ -1,4 +1,6 @@
 import { diagnosticResult, diagnosticObservation, requestTemplate } from "./debug.js";
+import { fixtureFields, fixtureBody } from "./fixture.js";
+import { inspectRedaction } from "./observation.js";
 
 const page = document.querySelector("#lr-app");
 
@@ -94,6 +96,8 @@ original.addEventListener("click", () => {
   input.open = true;
   send.disabled = false;
   send.focus();
+  renderRows("#redaction-baseline-fields", labels.map((label, i) => [label, fixtureFields[i].value]));
+  document.querySelector("#redaction-baseline-fields").hidden = false;
 });
 
 function show(text) {
@@ -114,7 +118,7 @@ function showResult(result) {
   show(blocked && result.upstreamReceived === false
     ? `Blocked by Gateway · HTTP ${result.gatewayStatus} · policy_violation`
     : result.upstreamReceived
-    ? `Upstream received the request · ${masked} of 4 fields masked · HTTP ${result.gatewayStatus}`
+    ? `${masked} of 4 values masked · HTTP ${result.gatewayStatus}`
     : `No upstream receipt · HTTP ${result.gatewayStatus}`);
   panel.firstChild.className = "redaction-outcome";
   if (blocked && result.upstreamReceived === false) {
@@ -123,17 +127,40 @@ function showResult(result) {
     panel.append(stopped);
   }
   const fields = document.createElement("dl");
+  fields.className = "redaction-values";
+  const observed = inspectRedaction(fixtureBody, result.receivedText, fixtureFields);
   labels.forEach((label, index) => {
     const term = document.createElement("dt");
     const value = document.createElement("dd");
     term.textContent = label;
-    value.textContent = result.fields[index];
+    const code = document.createElement("code");
+    const status = document.createElement("span");
+    const state = result.fields[index];
+    code.textContent = state === "masked" ? observed.fieldValues[index] || "Masked"
+      : state === "unmasked" ? fixtureFields[index].value
+      : state === "no upstream receipt" ? "Not delivered" : "Not confirmed";
+    status.textContent = state === "masked" ? "Masked" : state === "unmasked" ? "Unmasked" : "";
+    status.className = "redaction-field-status";
+    value.dataset.state = state;
+    value.append(code, status);
     fields.append(term, value);
   });
   panel.append(fields);
+  if (result.receivedText) {
+    const received = document.createElement("details");
+    received.className = "redaction-received";
+    received.open = true;
+    const heading = document.createElement("summary");
+    heading.textContent = "Received by the model";
+    const text = document.createElement("pre");
+    text.textContent = result.receivedText;
+    received.append(heading, text);
+    panel.append(received);
+  }
   if (result.summaryPreserved) {
     const summary = document.createElement("p");
-    summary.textContent = "The summary preserved THB 1,250 and the parking fee.";
+    summary.className = "redaction-summary";
+    summary.textContent = "Summary preserved · THB 1,250 · Millennium Falcon parking fee";
     panel.append(summary);
   }
   if (result.gatewayRequestId) {

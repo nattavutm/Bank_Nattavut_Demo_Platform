@@ -59,6 +59,16 @@
   color: #ebca95;
 }
 
+.redaction-values dd { overflow-wrap: anywhere; }
+.redaction-values[hidden] { display: none; }
+.redaction-values dd[data-state="masked"] code { color: #9bd7b7; }
+.redaction-values dd[data-state="unmasked"] code { color: #e7b7ac; }
+.redaction .redaction-field-status { display: block; margin-top: 3px; font-size: 12px; color: #929292; }
+.redaction-received { margin-top: 24px; }
+.redaction .redaction-received summary { color: #aaa; font-size: 14px; font-weight: 400; }
+.redaction .redaction-received pre { background: #101010; padding: 14px; border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; color: #c8d8cf; font: 13px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.redaction .redaction-summary { color: #b3ccbd; }
+
 .redaction footer {
   display: flex;
   justify-content: space-between;
