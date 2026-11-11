@@ -19,6 +19,7 @@ test("Gateway API and all its assets require the existing platform login", async
     "/gateway/app.js",
     "/gateway/redaction/",
     "/gateway/redaction/frame.js",
+    "/gateway/redaction/debug.js",
   ]) {
     const r = await worker.fetch(new Request("https://demo.test" + path), {});
     assert.equal(r.status, path.startsWith("/api/") ? 401 : 303);

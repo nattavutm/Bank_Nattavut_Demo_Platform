@@ -15,7 +15,7 @@ const server = createServer(async (request, response) => {
       response.end(JSON.stringify(health ? { app: 'r5r5 Bank', mode: 'ui-preview', integrations: { model: 'not-configured', guard: 'not-configured', scanner: 'not-configured' } } : { error: 'Live integrations are not configured.' }));
       return;
     }
-    const target = resolve(root, '.' + (path === '/' ? '/index.html' : path));
+    const target = resolve(root, '.' + (path.endsWith('/') ? path + 'index.html' : path));
     if (!target.startsWith(root.endsWith(sep) ? root : root + sep)) { response.writeHead(403); response.end(); return; }
     let content;
     let type = mime[extname(target)] || 'application/octet-stream';

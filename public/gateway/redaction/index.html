@@ -28,6 +28,7 @@
       <div class="redaction-actions" aria-label="Demo steps">
         <button id="redaction-original" type="button">1. Show original request</button>
         <button id="redaction-send" type="button" disabled>2. Send through Gateway</button>
+        <button id="redaction-debug-toggle" type="button" aria-expanded="false" aria-controls="redaction-debug">Debug</button>
       </div>
 
       <div class="redaction-comparison">
@@ -44,6 +45,25 @@
           </div>
         </section>
       </div>
+
+      <section id="redaction-debug" class="redaction-panel redaction-debug" aria-labelledby="redaction-debug-title" hidden>
+        <div class="debug-heading">
+          <div><h2 id="redaction-debug-title">Run diagnostics</h2><p id="debug-state" class="redaction-label" aria-live="polite">No request sent</p></div>
+          <button id="debug-copy" type="button" disabled>Copy diagnostics</button>
+        </div>
+        <p id="debug-local" class="debug-notice" hidden>Local UI preview. The live EKS runner is not connected here.</p>
+        <p class="debug-route">Browser <span>→</span> Worker <span>→</span> EKS runner <span>→</span> AI Gateway <span>→</span> Synthetic model</p>
+        <div class="debug-grid">
+          <section><h3>Run</h3><dl id="debug-run"></dl></section>
+          <section><h3>Gateway</h3><dl id="debug-gateway"></dl></section>
+          <section><h3>Upstream evidence</h3><dl id="debug-upstream"></dl></section>
+        </div>
+        <div id="debug-observation" class="debug-notice">Run the test to inspect the observed result.</div>
+        <details><summary>Request template · synthetic fixture</summary><pre id="debug-request"></pre></details>
+        <details><summary>Sanitized runner result</summary><pre id="debug-result">No result received.</pre></details>
+        <details open><summary>Request timeline</summary><ol id="debug-timeline"></ol></details>
+        <p class="debug-footnote">HTTP status and upstream receipts do not establish a Gateway policy decision. Match the request ID in Vision One Events.</p>
+      </section>
 
       <footer>
         <span>Only the synthetic refund fixture is sent.</span>
