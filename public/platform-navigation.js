@@ -15,13 +15,28 @@
       id: "gateway",
       name: "AI Gateway",
       preview: true,
-      items: [
-        {name: 'Review Invoices. Prevent Unauthorized Payments.', route:'#gateway/invoice-payment'},
-        {name: 'Check Status, Prevent Database Deletion', route:'#gateway/database-deletion'},
-        {name: 'Mask Sensitive Data Before Inference', route:'#gateway/card-redaction'},
-        {name: 'Primary Model Fails, App Keeps Responding', route:'#gateway/model-fallback'},
-        {name: 'Summarize Emails. Block Hidden Instructions.', route:'#gateway/email-injection'},
-        {name: 'Approved Apps. Approved Models.', route:'#gateway/model-access'},
+      groups: [
+        {
+          name: "Access Control",
+          items: [
+            {name: 'Review Invoices. Prevent Unauthorized Payments.', route:'#gateway/invoice-payment'},
+            {name: 'Check Status, Prevent Database Deletion', route:'#gateway/database-deletion'},
+            {name: 'Approved Apps. Approved Models.', route:'#gateway/model-access'},
+          ],
+        },
+        {
+          name: "Guardrails",
+          items: [
+            {name: 'Mask Sensitive Data Before Inference', route:'#gateway/card-redaction'},
+            {name: 'Summarize Emails. Block Hidden Instructions.', route:'#gateway/email-injection'},
+          ],
+        },
+        {
+          name: "Routing Rules",
+          items: [
+            {name: 'Primary Model Fails, App Keeps Responding', route:'#gateway/model-fallback'},
+          ],
+        },
       ],
     },
     { id: "insights", name: "AI Risk Insights", direct: true, tbd: true },
