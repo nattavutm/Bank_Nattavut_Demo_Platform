@@ -167,3 +167,16 @@ test("Cloudflare model discovery requires the existing upstream credential and n
     assert.equal(t.calls.length, 0);
   } finally { t.sqlite.close(); }
 });
+
+test("a real generated answer that changes THB to credits is not marked as preserving the refund", async () => {
+  const t = setup();
+  try {
+    t.env.REDACTION_EXECUTION = "cloudflare";
+    t.env.AI.run = async () => ({ response: "A refund of 1,250 credits is requested for the Millennium Falcon parking fee." });
+    const { id } = await (await t.browser("", "POST", { mode: "direct" })).json();
+    const job = await (await t.browser("/" + id)).json();
+    assert.equal(job.result.modelMode, "live");
+    assert.equal(job.result.summaryPreserved, false);
+    assert.ok(job.result.reply.includes("credits"), "the app must display the actual response, not repair it into a fake success");
+  } finally { t.sqlite.close(); }
+});
