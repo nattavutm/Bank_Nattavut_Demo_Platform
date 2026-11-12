@@ -89,6 +89,7 @@ export async function redactionApi(request, env, runner = false) {
   const path = new URL(request.url).pathname;
   const now = Date.now();
   try {
+    if (env.REDACTION_EXECUTION === "cloudflare") throw new Fault(410, "The legacy EKS runner has been retired.");
     const db = database(env);
     if (runner) {
       if (request.method !== "POST") throw new Fault(405, "Use POST.");

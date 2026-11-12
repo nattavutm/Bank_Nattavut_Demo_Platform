@@ -24,7 +24,7 @@ The Worker records the validated original or redacted prompt immediately before 
 1. Create the private Tunnel/VPC Service, store the connector token and existing dedicated demo Virtual Key in their target secrets, and deploy the connector.
 2. Add `AI_GATEWAY` to Wrangler bindings and set `REDACTION_EXECUTION=cloudflare` only when connectivity is ready. Change only the summary provider base URL to `https://demo.nattavut.online/api/gateway/redaction/live/model`; retain its model/alias/guardrail assignments.
 3. The Worker owns execution; EKS runner routes return 410. Run both buttons and match Gateway evidence with the received Worker prompt and real model reply.
-4. Move the old synthetic MCP/primary/backup test endpoint contracts to Cloudflare before disabling their EKS deployment. Update only dedicated Gateway provider/MCP resource URLs as needed. Unimplemented scenarios stay Preview/Not tested.
+4. The platform’s existing scripted fixtures remain in the Cloudflare app. Retire the old EKS bootstrap/mock service. Its unused MCP/probe/primary/backup resource registrations are historical/planned configuration, not evidence of working live cases; future live use must wire these dedicated resources to Cloudflare implementations and validate them before presentation.
 5. Scale `r5r5-mask-runner` and `r5r5-upstreams` to zero. Retain their manifests for rollback; do not delete run evidence, credentials or persistent volumes as part of this change. Verify the active EKS workloads are only Gateway dependencies and the connector.
 
 ## Checks
@@ -32,3 +32,9 @@ The Worker records the validated original or redacted prompt immediately before 
 The test suite exercises real SQLite persistence and a test AI binding: session ownership, fixed input restrictions, direct vs protected paths, unexposed one-use context, replay rejection, no live success without an inference receipt, no fallback on error, and no public arbitrary-target API. Production verification must separately demonstrate both paths and confirm EKS workload retirement.
 
 References: https://developers.cloudflare.com/workers-vpc/configuration/vpc-services/ and https://developers.cloudflare.com/workers-vpc/configuration/tunnel/ (Workers VPC is currently beta).
+
+## Verified cutover — 2026-11-12
+
+Workers VPC Service `01a1cddf-0fae-70f0-8ae4-9b241c187905` uses private Tunnel `bd3ee7ce-f9ad-4ef7-9aaa-5fda356e81db` to the Gateway Service on 8080. The summary provider uses the HTTPS Cloudflare model endpoint. Its existing bearer credential is verified against a SHA-256 fingerprint, so only the Virtual Key and connector credential needed a new storage location. The underlying model is Workers AI; both Direct and Gateway tests returned real generated summaries and the Gateway path masked all four input fields.
+
+The `r5r5-mask-runner` and `r5r5-upstreams` Deployments are scaled to zero. Active lab workloads are the Gateway, its Redis dependency, and `r5r5-gateway-connector`. Their code/manifests and Secrets remain available for rollback; they are not running. Legacy signed runner routes are retired with HTTP 410 while Cloudflare execution is enabled.
