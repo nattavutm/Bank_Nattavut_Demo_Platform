@@ -1,22 +1,22 @@
-.scanner-explainer { --ge-block:#f3c47c; width:100%; max-width:1280px; margin:20px auto 28px; color:#eee; }
+.scanner-explainer { --ge-block:var(--tone-f3c47c, #f3c47c); width:100%; max-width:1280px; margin:20px auto 28px; color:var(--tone-eeeeee, #eee); }
 .scanner-explainer .ge-intro { padding-bottom:30px; }
 .se-graph { display:grid; grid-template-columns:minmax(170px,.9fr) minmax(230px,1.4fr) minmax(170px,.9fr); grid-template-rows:280px 125px; gap:32px 50px; align-items:center; }
-.se-node { display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;min-height:125px;border:1px solid #393939;background:#202020;border-radius:17px;padding:20px 14px;text-align:center; }
+.se-node { display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;min-height:125px;border:1px solid var(--tone-393939, #393939);background:var(--tone-202020, #202020);border-radius:17px;padding:20px 14px;text-align:center; }
 .se-node h3 { font-size:23px;line-height:1.3;margin:14px 0 0; }
-.se-node > svg { width:32px;height:32px;color:#bcbcbc; }
+.se-node > svg { width:32px;height:32px;color:var(--tone-bcbcbc, #bcbcbc); }
 .se-scanner { grid-column:1;grid-row:1;min-height:180px; }
 .se-scanner .ge-guard-symbol { width:66px;height:66px; }
 .se-scanner .ge-guard-symbol img { width:48px;height:43px; }
 .se-target { grid-column:3;grid-row:1;min-height:180px; }
-.se-prompt { grid-column:2;grid-row:1;align-self:start;position:relative;z-index:1;padding:18px 20px;border:1px solid #513036;border-radius:17px;background:#1c1516; }
-.se-prompt h3 { margin:0 0 10px;font-size:14px;line-height:1.4;color:#e99ca4; }
-.se-prompt p { margin:0;color:#eee;font-size:19px;line-height:1.5; }
+.se-prompt { grid-column:2;grid-row:1;align-self:start;position:relative;z-index:1;padding:18px 20px;border:1px solid var(--tone-513036, #513036);border-radius:17px;background:var(--tone-1c1516, #1c1516); }
+.se-prompt h3 { margin:0 0 10px;font-size:14px;line-height:1.4;color:var(--tone-e99ca4, #e99ca4); }
+.se-prompt p { margin:0;color:var(--tone-eeeeee, #eee);font-size:19px;line-height:1.5; }
 .se-judge { grid-column:1;grid-row:2; }
 .se-report { grid-column:3;grid-row:2; }
 .se-current { border-color:#8a686d; }
 .se-controls { display:flex;align-items:center;gap:16px;min-height:42px;margin-top:26px; }
-.se-illustration { font-size:13px;color:#858585; }
-.se-controls p { flex:1;margin:0;text-align:right;font-size:16px;color:#ccc; }
+.se-illustration { font-size:13px;color:var(--tone-858585, #858585); }
+.se-controls p { flex:1;margin:0;text-align:right;font-size:16px;color:var(--tone-cccccc, #ccc); }
 .scanner-explainer-mount + .scanner-stage { margin-top:0; }
 @media(max-width:1100px) { .se-graph { column-gap:35px; } .se-node h3 { font-size:20px; } .se-prompt p { font-size:17px; } }
 @media(max-width:900px) {
@@ -33,15 +33,15 @@
 @media(prefers-reduced-motion:reduce) { .scanner-explainer .ge-traveler,.scanner-explainer .ge-pipe-pulse { display:none; } }
 
 .se-prompt h3 { display:flex;flex-direction:column;gap:5px; }
-.se-prompt [data-se-attack-type] { font-size:19px;line-height:1.4;color:#f2b4bc; }
-.se-prompt-label { font-size:12px;color:#b68b90; }
+.se-prompt [data-se-attack-type] { font-size:19px;line-height:1.4;color:var(--tone-f2b4bc, #f2b4bc); }
+.se-prompt-label { font-size:12px;color:var(--tone-b68b90, #b68b90); }
 
 /* Agentic-only context; Standard Scan retains its compact diagram. */
-.se-node-detail { margin:8px 0 0;font-size:14px;line-height:1.45;color:#aaa; }
+.se-node-detail { margin:8px 0 0;font-size:14px;line-height:1.45;color:var(--tone-aaaaaa, #aaa); }
 .se-agentic .se-graph { grid-template-rows:320px minmax(170px,auto); }
 .se-agentic .se-prompt { min-height:205px; }
 .se-agentic .se-prompt p { font-size:18px; }
-.se-agentic-summary { color:#aaa;font-size:15px;line-height:1.65;margin:24px 0 0;max-width:760px; }
+.se-agentic-summary { color:var(--tone-aaaaaa, #aaa);font-size:15px;line-height:1.65;margin:24px 0 0;max-width:760px; }
 @media(max-width:900px) {
   .se-agentic .se-graph { grid-template-rows:auto 205px 180px; }
   .se-agentic .se-prompt { min-height:0; }

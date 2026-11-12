@@ -22,6 +22,15 @@ test('missing or malformed auth configuration fails closed',async()=>{
 test('login page is public but has no private app content',async()=>{
  const response=await worker.fetch(new Request(origin+'/login'),env);assert.equal(await response.text(),'/login');assert.equal(response.headers.get('Cache-Control'),'no-store');
 });
+test('login appearance assets remain public without opening private application routes',async()=>{
+ for(const path of ['/theme.js','/themes.css','/typography.css','/theme-accents.css']){
+  const response=await worker.fetch(new Request(origin+path),env);
+  assert.equal(response.status,200,path);assert.equal(await response.text(),path);
+ }
+ for(const path of ['/gateway/app.js','/api/gateway/redaction/live/jobs']){
+  assert.equal((await worker.fetch(new Request(origin+path),env)).status,path.startsWith('/api/')?401:303,path);
+ }
+});
 test('incorrect password does not issue a session or echo the password',async()=>{
  const response=await worker.fetch(login('incorrect'),env);assert.equal(response.status,401);assert.equal(response.headers.has('Set-Cookie'),false);assert.equal((await response.text()).includes('incorrect'),false);
 });

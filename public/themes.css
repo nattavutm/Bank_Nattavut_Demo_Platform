@@ -1,0 +1,267 @@
+/* Daylight palette for the existing dark surfaces. Dark retains the original fallbacks. */
+:root { --ui-color-scheme: dark; color-scheme: dark; }
+html[data-theme="light"] {
+  --ui-color-scheme: light;
+  color-scheme: light;
+  --accent-surface: #fff0f2;
+  --accent-focus: #bc182b;
+  --tone-000000bb: #ffffffbb;
+  --tone-080808: #fafafa;
+  --tone-080808ed: #fafafaed;
+  --tone-0b0b0b: #fafafa;
+  --tone-101010: #ffffff;
+  --tone-111110: #ffffff;
+  --tone-111111: #ffffff;
+  --tone-121211: #ffffff;
+  --tone-131311: #ffffff;
+  --tone-131313: #ffffff;
+  --tone-141412: #ffffff;
+  --tone-141413: #ffffff;
+  --tone-141414: #ffffff;
+  --tone-151512: #ffffff;
+  --tone-151514: #ffffff;
+  --tone-151515: #ffffff;
+  --tone-161612: #ffffff;
+  --tone-161616: #ffffff;
+  --tone-162820: #f3f4f6;
+  --tone-171214: #ffffff;
+  --tone-17150f: #ffffff;
+  --tone-171714: #ffffff;
+  --tone-171715: #ffffff;
+  --tone-171717: #ffffff;
+  --tone-191914: #ffffff;
+  --tone-191916: #ffffff;
+  --tone-1b1b1b: #f3f4f6;
+  --tone-1c1516: #ffffff;
+  --tone-1d1d1d: #f3f4f6;
+  --tone-202020: #f3f4f6;
+  --tone-22221b: #f3f4f6;
+  --tone-22221f: #f3f4f6;
+  --tone-222222: #f3f4f6;
+  --tone-232323: #f3f4f6;
+  --tone-24211c: #f3f4f6;
+  --tone-242424: #eef0f3;
+  --tone-25251f: #f3f4f6;
+  --tone-252525: #eef0f3;
+  --tone-262626: #eef0f3;
+  --tone-291912: #faf5f3;
+  --tone-291b1b: #f3f4f6;
+  --tone-292215: #f3f4f6;
+  --tone-292925: #eef0f3;
+  --tone-292929: #eef0f3;
+  --tone-2a2a23: #eef0f3;
+  --tone-2a2a24: #eef0f3;
+  --tone-2b1714: #f9f4f3;
+  --tone-2b2b21: #eef0f3;
+  --tone-2b2b2b: #eef0f3;
+  --tone-2c2c26: #eef0f3;
+  --tone-2c2c2b: #eef0f3;
+  --tone-2c2c2c: #eef0f3;
+  --tone-2d2d21: #eef0f3;
+  --tone-2d2d2d: #eef0f3;
+  --tone-2e2e28: #eef0f3;
+  --tone-2f2f29: #eef0f3;
+  --tone-302124: #eef0f3;
+  --tone-302416: #f9f6f3;
+  --tone-303027: #eef0f3;
+  --tone-30302b: #eef0f3;
+  --tone-303030: #d4d9e0;
+  --tone-313131: #d4d9e0;
+  --tone-33332e: #d4d9e0;
+  --tone-333333: #d4d9e0;
+  --tone-33333355: #d4d9e055;
+  --tone-343434: #d4d9e0;
+  --tone-353529: #d4d9e0;
+  --tone-353535: #d4d9e0;
+  --tone-393939: #d4d9e0;
+  --tone-3a3a3a: #d4d9e0;
+  --tone-3b3b32: #d4d9e0;
+  --tone-3b3b3b: #d4d9e0;
+  --tone-3c3016: #faf8f2;
+  --tone-3c3424: #f8f7f4;
+  --tone-3c3c2e: #d4d9e0;
+  --tone-3d3d30: #d4d9e0;
+  --tone-44443a: #c1c8d2;
+  --tone-444444: #c1c8d2;
+  --tone-474747: #c1c8d2;
+  --tone-48483a: #c1c8d2;
+  --tone-494949: #c1c8d2;
+  --tone-50504b: #8b96a5;
+  --tone-513036: #f8f4f5;
+  --tone-5a3c2a: #f9f5f3;
+  --tone-5e4f2b: #f9f7f3;
+  --tone-5f5f53: #8b96a5;
+  --tone-633b33: #f9f4f3;
+  --tone-636357: #8b96a5;
+  --tone-656557: #8b96a5;
+  --tone-65655b: #8b96a5;
+  --tone-686868: #667085;
+  --tone-69695e: #8b96a5;
+  --tone-6a6a60: #8b96a5;
+  --tone-6e6e59: #8b96a5;
+  --tone-6e6e62: #667085;
+  --tone-6f6f61: #667085;
+  --tone-6f6f63: #667085;
+  --tone-707065: #667085;
+  --tone-707070: #667085;
+  --tone-727272: #667085;
+  --tone-747474: #667085;
+  --tone-75756a: #667085;
+  --tone-767669: #667085;
+  --tone-767676: #667085;
+  --tone-77776b: #667085;
+  --tone-77776d: #667085;
+  --tone-77776f: #667085;
+  --tone-777777: #667085;
+  --tone-78786b: #667085;
+  --tone-797979: #667085;
+  --tone-7d7d74: #667085;
+  --tone-7e7e7e: #667085;
+  --tone-7f7f7f: #667085;
+  --tone-808070: #667085;
+  --tone-808071: #667085;
+  --tone-818177: #667085;
+  --tone-85857d: #667085;
+  --tone-858585: #667085;
+  --tone-878787: #667085;
+  --tone-88887a: #667085;
+  --tone-888888: #667085;
+  --tone-898989: #667085;
+  --tone-8a8a7d: #667085;
+  --tone-8b8b8b: #667085;
+  --tone-8c8c7e: #667085;
+  --tone-8c8c80: #667085;
+  --tone-8d8d80: #667085;
+  --tone-8e8e8e: #525f70;
+  --tone-8f8f7d: #667085;
+  --tone-8f8f8f: #525f70;
+  --tone-909090: #525f70;
+  --tone-90d7b6: #276d4c;
+  --tone-92927e: #667085;
+  --tone-929286: #667085;
+  --tone-929287: #525f70;
+  --tone-929292: #525f70;
+  --tone-939388: #525f70;
+  --tone-96968e: #525f70;
+  --tone-969696: #525f70;
+  --tone-97978c: #525f70;
+  --tone-98b9a7: #3c5849;
+  --tone-999999: #525f70;
+  --tone-99ceb8: #30644e;
+  --tone-9a9a9a: #525f70;
+  --tone-9b9b9b: #525f70;
+  --tone-9bd7b7: #2a6a48;
+  --tone-9d9d9d: #525f70;
+  --tone-9ebde4: #204574;
+  --tone-9f9f91: #525f70;
+  --tone-9f9f9f: #525f70;
+  --tone-a0a096: #525f70;
+  --tone-a0a0a0: #525f70;
+  --tone-a2a2a2: #525f70;
+  --tone-a3a391: #525f70;
+  --tone-a3a3a3: #525f70;
+  --tone-a4a496: #525f70;
+  --tone-a4a4a4: #525f70;
+  --tone-a6a694: #525f70;
+  --tone-a6a6a6: #525f70;
+  --tone-a8a891: #535341;
+  --tone-a9a9a9: #405065;
+  --tone-aaa990: #545340;
+  --tone-aaa99f: #525f70;
+  --tone-aaaaaa: #405065;
+  --tone-aeaea5: #405065;
+  --tone-b0b0a2: #405065;
+  --tone-b3ccbd: #3b5947;
+  --tone-b4b4a2: #405065;
+  --tone-b5a076: #605134;
+  --tone-b68b90: #5b393d;
+  --tone-b6ae97: #57503d;
+  --tone-b7b7a6: #405065;
+  --tone-b8b8b8: #405065;
+  --tone-b9b99c: #57573d;
+  --tone-b9b9b9: #405065;
+  --tone-b9c8c1: #405065;
+  --tone-bbbbbb: #405065;
+  --tone-bcbcbc: #405065;
+  --tone-c0c0c0: #405065;
+  --tone-c2c2b6: #405065;
+  --tone-c8d8cf: #303d50;
+  --tone-c9c9bb: #303d50;
+  --tone-c9c9c9: #303d50;
+  --tone-c9ddf7: #18437c;
+  --tone-cccccc: #303d50;
+  --tone-cdbb90: #66552e;
+  --tone-d0d0d0: #303d50;
+  --tone-d2d2d2: #303d50;
+  --tone-d3d3d3: #303d50;
+  --tone-d6a1a1: #672d2d;
+  --tone-d6d6c5: #303d50;
+  --tone-d6d6d6: #303d50;
+  --tone-d79b9b: #6a2a2a;
+  --tone-d7d7d7: #303d50;
+  --tone-d8b59f: #69432b;
+  --tone-d9a2a2: #692b2b;
+  --tone-dadada: #303d50;
+  --tone-dbc38a: #715a23;
+  --tone-dbdbcf: #303d50;
+  --tone-dddddd: #1d2939;
+  --tone-e0a3a3: #6f2525;
+  --tone-e1e1d3: #303d50;
+  --tone-e2e2e2: #1d2939;
+  --tone-e4e4e4: #1d2939;
+  --tone-e5a49a: #762a1e;
+  --tone-e6c699: #77521d;
+  --tone-e7b7ac: #733021;
+  --tone-e7e7db: #1d2939;
+  --tone-e7e7e7: #1d2939;
+  --tone-e8e8dc: #1d2939;
+  --tone-e99ca4: #791b25;
+  --tone-e9e9df: #1d2939;
+  --tone-eaeade: #1d2939;
+  --tone-ebca95: #7c5618;
+  --tone-ed626e: #7c1820;
+  --tone-edede9: #1d2939;
+  --tone-eeeeee: #1d2939;
+  --tone-efefef: #1d2939;
+  --tone-f0f0e8: #1d2939;
+  --tone-f0f0f0: #1d2939;
+  --tone-f1f1e9: #1d2939;
+  --tone-f2b4bc: #7c1825;
+  --tone-f3c47c: #7c5518;
+  --tone-f3f3f3: #1d2939;
+  --tone-f4f4f4: #1d2939;
+  --tone-f9c5c9: #7c181f;
+  --tone-ffffff: #1d2939;
+}
+
+/* Persistent application-wide appearance control. */
+body .sidebar-signout { display: flex; align-items: center; gap: 9px; }
+body .theme-toggle, body .sidebar-signout .theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-width: 42px; min-height: 42px; padding: 10px 13px; margin: 0;
+  border: 1px solid #333; border-radius: 24px; background: #161616;
+  color: #ddd; font: inherit; font-size: 13px; line-height: 1.5; cursor: pointer;
+}
+body .theme-toggle svg, body .sidebar-signout .theme-toggle svg { display: block; width: 18px; height: 18px; }
+body .theme-toggle:hover { background: #252525; color: #fff; }
+body .theme-toggle:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 4px; }
+.theme-toggle-floating { position: absolute; top: 24px; right: 28px; z-index: 35; }
+html[data-theme='light'] body .theme-toggle { background: #fff; border-color: #d4d9e0; color: #344054; }
+html[data-theme='light'] body .theme-toggle:hover { background: #eef0f3; color: #1d2939; }
+html[data-theme='light'] :is(.platform-dropdown, .platform-submenu, .scanner-subnav, .lr-dropdown, .lr-submenu) { box-shadow: 0 12px 32px #10182824; }
+html[data-theme='light'] .official-brand img { filter: none; }
+html[data-theme='light'] .ge-toggle button[aria-selected='true'] { color: #fff; }
+html[data-theme='light'] body .scanner-objectives button[aria-pressed='true'],
+html[data-theme='light'] body .scanner-target-choice button[aria-pressed='true'],
+html[data-theme='light'] body .guard-use-cases button[aria-pressed='true'],
+html[data-theme='light'] body .guard-variants button[aria-pressed='true'] { color: #8f1524; }
+html[data-theme='light'] { --tone-000000bb: #00000044; }
+@media (max-width: 1100px) {
+  .sidebar-signout .theme-toggle span { display: none; }
+  body .sidebar-signout .theme-toggle { width: 40px; min-width: 40px; min-height: 40px; padding: 9px; }
+}
+@media (max-width: 720px) {
+  body .sidebar-signout { gap: 7px; }
+  body .sidebar-signout .theme-toggle { width: 34px; min-width: 34px; min-height: 34px; padding: 7px; }
+  .theme-toggle-floating { top: 18px; right: 20px; }
+}
