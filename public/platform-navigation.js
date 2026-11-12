@@ -1,25 +1,5 @@
 /* One disclosure/flyout pattern for every module. Navigation never starts a scan. */
 (() => {
-  const gwGroups = [
-    { name: "Data leakage", codes: ["card-redaction", "s01", "s02", "s03", "s04", "s05"] },
-    { name: "Prompt & tool attacks", codes: ["s06", "s07", "s08", "s09"] },
-    { name: "Agent misuse", codes: ["s10", "s11", "s12"] },
-  ];
-  const gatewayCases = [
-    { code: "card-redaction", card_title: "Mask Sensitive Data Before Inference" },
-    { code: "s01", card_title: "CEO salary" },
-    { code: "s02", card_title: "Project Falcon" },
-    { code: "s03", card_title: "Export customer PII" },
-    { code: "s04", card_title: "Paste to public AI" },
-    { code: "s05", card_title: "Leaked example key" },
-    { code: "s06", card_title: "Poisoned ticket" },
-    { code: "s07", card_title: "Poisoned document" },
-    { code: "s08", card_title: "Poisoned CRM note" },
-    { code: "s09", card_title: "Poisoned tool" },
-    { code: "s10", card_title: "Delete too much" },
-    { code: "s11", card_title: "Runaway usage" },
-    { code: "s12", card_title: "Personal AI tool" },
-  ];
   const modules = [
     { id: "chat", name: "AI Chat", direct: true },
     { id: "guard", name: "AI Guard", direct: true },
@@ -35,13 +15,10 @@
       id: "gateway",
       name: "AI Gateway",
       preview: true,
-      groups: gwGroups.map((g) => ({
-        name: g.name,
-        items: g.codes.map((code) => ({
-          name: gatewayCases.find((c) => c.code === code).card_title,
-          route: "#gateway/" + code,
-        })),
-      })),
+      items: [
+        {name: 'Check Status, Prevent Database Deletion', route:'#gateway/database-deletion'},
+        {name: 'Mask Sensitive Data Before Inference', route:'#gateway/card-redaction'},
+      ],
     },
     { id: "insights", name: "AI Risk Insights", direct: true, tbd: true },
     { id: "blueprint", name: "AI Blueprint", direct: true, tbd: true },

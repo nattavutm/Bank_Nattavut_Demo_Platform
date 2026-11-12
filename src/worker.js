@@ -1,4 +1,4 @@
-import {gatewayApi} from './gateway/index.js';
+import {databaseApi} from './gateway/database.js';
 import {redactionApi} from './gateway/redaction.js';
 import {liveRedactionApi} from './gateway/live-redaction.js';
 import { scannerApi, scannerService } from './scanner.js';
@@ -94,13 +94,16 @@ export default {async fetch(request,env){
   if (['/api/gateway/redaction/live/model/v1/chat/completions', '/api/gateway/redaction/live/model/v1/models'].includes(path)) return liveRedactionApi(request, env, true);
   if (['/api/gateway/redaction/live/runner/claim', '/api/gateway/redaction/live/runner/finish', '/api/gateway/redaction/live/inference'].includes(path))
     return liveRedactionApi(request, env, true);
+  if(path==='/api/gateway/database/mcp')return databaseApi(request,env,true);
   const auth=await authorize(request,env);if(auth)return auth;
+  if(path.startsWith('/api/gateway/database/'))return databaseApi(request,env);
+  if(path==='/api/gateway/scenarios')return json({scenarios:[{id:'database-deletion',title:'Check Status, Prevent Database Deletion'},{id:'card-redaction',title:'Mask Sensitive Data Before Inference'}]});
   if (path === '/api/gateway/redaction/live' || path.startsWith('/api/gateway/redaction/live/'))
     return liveRedactionApi(request, env);
   const response = path === '/api/gateway/redaction' || path.startsWith('/api/gateway/redaction/')
     ? await redactionApi(request, env)
-    : path.startsWith('/api/gateway/') ? await gatewayApi(request, env) : await app.fetch(request, env);
-  const gatewayView = ['/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html'].includes(path);
+    : path.startsWith('/api/gateway/') ? json({error:'This archived Gateway use case has been retired.'},410) : await app.fetch(request, env);
+  const gatewayView = ['/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html','/gateway/database/','/gateway/database/index.html'].includes(path);
   const headers = new Headers(response.headers);
   headers.set('Cache-Control', 'no-store');
   headers.set('X-Frame-Options', gatewayView ? 'SAMEORIGIN' : 'DENY');
