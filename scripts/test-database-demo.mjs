@@ -1,10 +1,11 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import {createHash,randomUUID} from 'node:crypto';import {databaseApi} from '../src/gateway/database.js';import worker from '../src/worker.js';
+import {mcpRpc} from '../src/gateway/mcp-client.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import {createHash,randomUUID} from 'node:crypto';import {databaseApi,databaseDecision} from '../src/gateway/database.js';import worker from '../src/worker.js';
 function setup(){const sqlite=new DatabaseSync(':memory:');const db={prepare(sql){const stmt=sqlite.prepare(sql);let args=[];return{bind(...v){args=v;return this;},async run(){return{meta:{changes:stmt.run(...args).changes}};},async first(){return stmt.get(...args)??null;},async all(){return{results:stmt.all(...args)};}};},async batch(stmts){return Promise.all(stmts.map(s=>s.run()));}};
  const env={LR_DB_PROTECTED:db,GATEWAY_DEMO_VIRTUAL_KEY:'test-key',REDACTION_UPSTREAM_KEY_SHA256:createHash('sha256').update('test-upstream').digest('hex')};
  const service=body=>databaseApi(new Request('https://demo.test/api/gateway/database/mcp',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer test-upstream'},body:JSON.stringify(body)}),env,true);
  const traffic=[];env.AI_GATEWAY_MCP={async fetch(url,opts){assert.equal(url,'http://trendai-gateway-gateway.trendai-gateway.svc.cluster.local:8081/');assert.equal(opts.headers.Authorization,'Bearer test-key');assert.equal(opts.redirect,'manual');const body=JSON.parse(opts.body);traffic.push(body);
   if(body.method==='tools/list')return Response.json({jsonrpc:'2.0',id:body.id,result:{tools:[{name:'r5r5-database-demo__get_status'}]}});
-  if(body.method==='tools/call'){body.params.name=body.params.name.replace('r5r5-database-demo__','');if(body.params.name==='delete_volume')return Response.json({jsonrpc:'2.0',id:body.id,error:{code:-32003,message:'Access denied'}},{status:403,headers:{'x-request-id':randomUUID()}});}
+  if(body.method==='tools/call'){body.params.name=body.params.name.replace('r5r5-database-demo__','');if(body.params.name==='delete_volume')return Response.json({jsonrpc:'2.0',id:body.id,error:{code:0,message:'mcpproxy tools/call: blocked by access policy: r5r5-database-demo/delete_volume (r5r5 demo - Deny database deletion)'}},{status:200,headers:{'x-request-id':randomUUID()}});}
   const response=await service(body);const headers=new Headers(response.headers);headers.set('x-request-id',randomUUID());return new Response(response.body,{status:response.status,headers});
  }};
  const browser=(path='',body,who='one')=>databaseApi(new Request('https://demo.test/api/gateway/database'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Origin:'https://demo.test',Cookie:'__Host-trendai_session='+who},...(body===undefined?{}:{body:JSON.stringify(body)})}),env);
@@ -14,7 +15,7 @@ test('guided demo executes scoped MCP calls, deletes only the direct sandbox and
  let snapshot;
  for(const step of ['status','delete','verify']){const response=await t.browser('/runs/'+id+'/step',{step});assert.equal(response.status,200);snapshot=await response.json();}
  assert.equal(snapshot.step,3);assert.deepEqual(snapshot.states,[{side:'direct',state:'Offline'},{side:'gateway',state:'Online'}]);
- const protectedDelete=snapshot.calls.find(x=>x.side==='gateway'&&x.tool==='delete_volume');assert.equal(protectedDelete.received,0);assert.equal(protectedDelete.committed,0);assert.equal(protectedDelete.http,403);
+ const protectedDelete=snapshot.calls.find(x=>x.side==='gateway'&&x.tool==='delete_volume');assert.equal(protectedDelete.received,0);assert.equal(protectedDelete.committed,0);assert.equal(protectedDelete.http,200);assert.equal(protectedDelete.decision,'deny');assert.equal(protectedDelete.decision_source,'gateway');
  assert.equal(snapshot.calls.filter(x=>x.committed).length,1);assert.equal(JSON.stringify(snapshot).includes('proof'),false);assert.equal(JSON.stringify(snapshot).includes('test-key'),false);
  const original=t.traffic.find(x=>x.method==='tools/call'&&x.params.name==='get_status');
  const replay=await (await t.service(original)).json();assert.equal(replay.result.isError,true);
@@ -47,3 +48,24 @@ test('failed status control does not advance to an unrelated deletion-denial dem
 test('new case assets and all browser-run endpoints remain behind login',async()=>{
  for(const path of ['/gateway/database/','/gateway/database/frame.js','/api/gateway/database/config','/api/gateway/database/runs'])assert.equal((await worker.fetch(new Request('https://demo.test'+path),{})).status,path.startsWith('/api/')?401:303);
 });
+
+test('only the verified live denial signature is classified as a Gateway policy deny',()=>{
+ const call={side:'gateway',tool:'delete_volume',status:'closed',http:200,received:0,committed:0,rpc:{error:{code:0,message:'mcpproxy tools/call: blocked by access policy: r5r5-database-demo/delete_volume (r5r5 demo - Deny database deletion)'}}};
+ assert.equal(databaseDecision(call).decision,'deny');
+ for(const change of [{side:'direct'},{tool:'get_status'},{http:403},{status:'open'},{received:1},{committed:1},{rpc:{error:{code:0,message:'Access denied'}}},{rpc:{error:{code:401,message:'Unauthorized'}}}])assert.equal(databaseDecision({...call,...change}).decision,'unknown');
+ assert.equal(databaseDecision({...call,status:'open'}).tool_received,'unknown');
+});
+
+test('MCP replies must match the dispatched JSON-RPC request ID',async()=>{
+ const binding={fetch:async()=>Response.json({jsonrpc:'2.0',id:'other-request',error:{code:0,message:'unrelated response'}})};
+ assert.equal((await mcpRpc(binding,'https://fixed.test','test-key','tools/call',{},'our-request')).message,null);
+ binding.fetch=async()=>new Response('data: '+JSON.stringify({jsonrpc:'2.0',id:'our-request',result:{content:[{type:'text',text:'Online'}]}})+'\n\n',{headers:{'Content-Type':'text/event-stream'}});
+ assert.equal((await mcpRpc(binding,'https://fixed.test','test-key','tools/call',{},'our-request')).message.result.content[0].text,'Online');
+});
+
+test('Live Agent accepts the observed Workers AI chat-completion envelope without substituting a tool',async()=>{const t=setup();try{
+ t.env.AI={async run(){return{choices:[{index:0,finish_reason:'stop',message:{role:'assistant',content:'{"tool":"get_status"}'}}]};}};
+ const {id}=await (await t.browser('/runs',{mode:'agent'})).json();
+ let result=await (await t.browser('/runs/'+id+'/step',{step:'status'})).json();assert.equal(result.step,1);assert.equal(result.calls.length,2);
+ result=await (await t.browser('/runs/'+id+'/step',{step:'delete'})).json();assert.equal(result.step,1);assert.equal(result.calls.length,2);assert.match(result.notice,/proposed get_status instead/);
+}finally{t.sqlite.close();}});

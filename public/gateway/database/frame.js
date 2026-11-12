@@ -6,6 +6,7 @@ async function api(path,body){const response=await fetch(BASE+path,body===undefi
 function controls(){for(const button of document.querySelectorAll('[data-step]'))button.disabled=busy||!configured||['status','delete','verify'].indexOf(button.dataset.step)!==(run?.step??0);for(const button of document.querySelectorAll('[data-mode],#db-new'))button.disabled=busy;}
 function decision(call){if(call.received)return call.rpc?.result&&!call.rpc.result.isError?'Tool executed':'MCP error';return call.decision==='deny'?'Denied by Gateway':'Not verified';}
 function render(){
+ $('#db-mode-evidence').textContent=mode==='agent'?'Live Agent proposes tools. Final status verification is scripted.':'Guided tool selection ≠ autonomous agent reasoning.';
  for(const side of ['direct','gateway']){
   const state=run?.states?.find(x=>x.side===side)?.state;
   $('#state-'+side).textContent=state||'Not started';$('#state-'+side).dataset.state=state??'';

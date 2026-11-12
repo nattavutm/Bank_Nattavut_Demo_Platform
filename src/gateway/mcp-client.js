@@ -16,7 +16,7 @@ export async function mcpRpc(binding,url,key,method,params,id,session={}) {
    }
   }
   text+=decoder.decode();
-  try{result.message=JSON.parse(text);}catch{result.message=null;}
+  try{const parsed=JSON.parse(text);result.message=parsed.id===id?parsed:null;}catch{result.message=null;}
   return result;
  }finally{await reader.cancel().catch(()=>{});}
 }
