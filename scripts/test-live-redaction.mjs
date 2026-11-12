@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
-import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
+import { generateKeyPairSync, randomUUID, sign, createHash } from "node:crypto";
 import { liveRedactionApi } from "../src/gateway/live-redaction.js";
 import { fixtureBody, fixtureFields } from "../public/gateway/redaction/fixture.js";
 import { MODEL } from "../src/constants.js";
@@ -16,7 +16,7 @@ function setup() {
   }, async batch(statements) { return Promise.all(statements.map(stmt => stmt.run())); } };
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
   const calls = [];
-  const env = { LR_DB_PROTECTED: db, REDACTION_RUNNER_PUBLIC_KEY: publicKey.export({ type: "spki", format: "der" }).toString("base64"),
+  const env = { REDACTION_UPSTREAM_KEY_SHA256: createHash("sha256").update("test-only-upstream").digest("hex"), LR_DB_PROTECTED: db, REDACTION_RUNNER_PUBLIC_KEY: publicKey.export({ type: "spki", format: "der" }).toString("base64"),
     AI: { async run(model, params) { calls.push({ model, params }); return { response: "Han Solo requests a THB 1,250 refund for the Millennium Falcon parking fee. Generated live test answer." }; } } };
   const origin = "https://demo.test", base = "/api/gateway/redaction/live";
   function browser(path = "", method = "GET", data, session = "a") {
@@ -115,7 +115,7 @@ test("Cloudflare owns orchestration and inference; Gateway receives only a fixed
       body.model = "synthetic-summary";
       body.messages[1].content = fixtureFields.reduce((s, f) => s.replace(f.value, "[REDACTED]"), body.messages[1].content);
       const modelResponse = await liveRedactionApi(new Request("https://demo.test/api/gateway/redaction/live/model/v1/chat/completions", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer test-only-upstream" }, body: JSON.stringify(body),
       }), t.env, true);
       assert.equal(modelResponse.status, 200);
       const headers = new Headers(modelResponse.headers); headers.set("x-request-id", randomUUID());
@@ -133,7 +133,7 @@ test("Cloudflare owns orchestration and inference; Gateway receives only a fixed
     assert.equal(t.calls.length, 2); assert.equal(gatewayCalls.length, 1);
     assert.equal((await t.service("/runner/claim", { claim: randomUUID() })).status, 410);
     const replay = await liveRedactionApi(new Request("https://demo.test/api/gateway/redaction/live/model/v1/chat/completions", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: gatewayCalls[0].options.body,
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer test-only-upstream" }, body: gatewayCalls[0].options.body,
     }), t.env, true);
     assert.equal(replay.status, 409);
     assert.equal(t.calls.length, 2);
@@ -146,10 +146,23 @@ test("Cloudflare model endpoint refuses missing or guessed context and missing p
     t.env.REDACTION_EXECUTION = "cloudflare";
     assert.equal((await t.browser("", "POST", { mode: "gateway" })).status, 503);
     const call = messages => liveRedactionApi(new Request("https://demo.test/api/gateway/redaction/live/model/v1/chat/completions", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "synthetic-summary", messages }),
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer test-only-upstream" }, body: JSON.stringify({ model: "synthetic-summary", messages }),
     }), t.env, true);
     assert.equal((await call([{ role: "system", content: "No context" }, { role: "user", content: fixtureBody }])).status, 401);
     assert.equal((await call([{ role: "system", content: "Demo run: " + randomUUID() + "\nContext: " + randomUUID() }, { role: "user", content: fixtureBody }])).status, 409);
+    assert.equal(t.calls.length, 0);
+  } finally { t.sqlite.close(); }
+});
+
+test("Cloudflare model discovery requires the existing upstream credential and never invokes AI", async () => {
+  const t = setup();
+  try {
+    t.env.REDACTION_EXECUTION = "cloudflare";
+    const url = "https://demo.test/api/gateway/redaction/live/model/v1/models";
+    assert.equal((await liveRedactionApi(new Request(url), t.env, true)).status, 401);
+    const response = await liveRedactionApi(new Request(url, { headers: { Authorization: "Bearer test-only-upstream" } }), t.env, true);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).data[0].id, "synthetic-summary");
     assert.equal(t.calls.length, 0);
   } finally { t.sqlite.close(); }
 });

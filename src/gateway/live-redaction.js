@@ -1,4 +1,4 @@
-import { Fault, json, readJson, sameOrigin } from "./runtime/util.js";
+import { Fault, json, readJson, sameOrigin, safeEqual } from "./runtime/util.js";
 import { verifyRunner } from "./redaction.js";
 import { fixtureBody, fixtureFields } from "../../public/gateway/redaction/fixture.js";
 import { inspectRedaction } from "../../public/gateway/redaction/observation.js";
@@ -130,6 +130,17 @@ async function cloudflareExecute(env, db, id, mode, claim) {
 }
 
 async function modelApi(request, env, db, now) {
+  if (!/^[0-9a-f]{64}$/.test(env.REDACTION_UPSTREAM_KEY_SHA256 ?? ""))
+    throw new Fault(503, "Upstream authentication is not configured.");
+  const header = request.headers.get("Authorization") ?? "";
+  if (!header.startsWith("Bearer ") || header.length > 2048) throw new Fault(401, "Invalid upstream credential.");
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(header.slice(7)));
+  const fingerprint = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+  if (!safeEqual(fingerprint, env.REDACTION_UPSTREAM_KEY_SHA256)) throw new Fault(401, "Invalid upstream credential.");
+  if (new URL(request.url).pathname.endsWith("/models")) {
+    if (request.method !== "GET") throw new Fault(405, "Use GET.");
+    return json({ object: "list", data: [{ id: "synthetic-summary", object: "model", owned_by: "r5r5-workers-ai" }] });
+  }
   if (request.method !== "POST") throw new Fault(405, "Use POST.");
   const body = await readJson(request, 8000), messages = body?.messages;
   if (!["r5r5-summary", "synthetic-summary"].includes(body?.model) || body.stream === true ||
@@ -148,7 +159,7 @@ export async function liveRedactionApi(request, env, service = false) {
   try {
     if (!db || !env.REDACTION_RUNNER_PUBLIC_KEY) throw new Fault(503, "The live demo runner is not configured.");
     const cloudflare = env.REDACTION_EXECUTION === "cloudflare";
-    if (cloudflare && path === base + "/model/v1/chat/completions") return await modelApi(request, env, db, now);
+    if (cloudflare && [base + "/model/v1/chat/completions", base + "/model/v1/models"].includes(path)) return await modelApi(request, env, db, now);
     if (service) {
       if (cloudflare) throw new Fault(410, "The EKS runner has been retired.");
       if (request.method !== "POST") throw new Fault(405, "Use POST.");

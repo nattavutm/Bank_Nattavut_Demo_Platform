@@ -4,7 +4,8 @@
   "main": "src/worker.js",
   "vars": {
     "REDACTION_RUNNER_PUBLIC_KEY": "MCowBQYDK2VwAyEADGDIuHWd/Y+2qC6xdAxb6yKWXZubnXEu+Q1cM6rByxU=",
-    "REDACTION_EXECUTION": "cloudflare"
+    "REDACTION_EXECUTION": "cloudflare",
+    "REDACTION_UPSTREAM_KEY_SHA256": "6770888b8989fb21de5427dec2f2f26e77d164a8de74b6aeeae6241f7394fd70"
   },
   "compatibility_date": "2026-10-29",
   "assets": {

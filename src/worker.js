@@ -91,7 +91,7 @@ export default {async fetch(request,env){
   const path = new URL(request.url).pathname;
   if (path === '/api/gateway/redaction/runner/claim' || path === '/api/gateway/redaction/runner/finish')
     return redactionApi(request, env, true);
-  if (path === '/api/gateway/redaction/live/model/v1/chat/completions') return liveRedactionApi(request, env, true);
+  if (['/api/gateway/redaction/live/model/v1/chat/completions', '/api/gateway/redaction/live/model/v1/models'].includes(path)) return liveRedactionApi(request, env, true);
   if (['/api/gateway/redaction/live/runner/claim', '/api/gateway/redaction/live/runner/finish', '/api/gateway/redaction/live/inference'].includes(path))
     return liveRedactionApi(request, env, true);
   const auth=await authorize(request,env);if(auth)return auth;
