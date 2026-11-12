@@ -1,228 +1,132 @@
-import { diagnosticResult, diagnosticObservation, requestTemplate } from "./debug.js";
+import { requestTemplate } from "./fixture.js";
 import { fixtureFields, fixtureBody } from "./fixture.js";
 import { inspectRedaction } from "./observation.js";
 import { mountMaskExplainer } from "./mask-explainer.js";
-
 const page = document.querySelector("#lr-app");
-const destroyExplainer = mountMaskExplainer(document.querySelector("#mask-explainer"));
-window.addEventListener("pagehide", destroyExplainer, { once: true });
-
-new ResizeObserver(() => {
-  parent.postMessage({
-    type: "gateway-preview-height",
-    height: Math.ceil(page.getBoundingClientRect().height),
-  }, location.origin);
-}).observe(page);
-
-const original = document.querySelector("#redaction-original");
-const input = document.querySelector("#redaction-input");
-const send = document.querySelector("#redaction-send");
-const panel = document.querySelector("#redaction-result");
-const endpoint = "/api/gateway/redaction";
-const labels = ["Payment card", "Leia’s contact email", "Rebel dispatch phone", "Hangar API authorization"];
-const debug = document.querySelector("#redaction-debug");
-const debugToggle = document.querySelector("#redaction-debug-toggle");
-const copy = document.querySelector("#debug-copy");
-const timeline = document.querySelector("#debug-timeline");
-let diagnostics = { status: "Not started", jobId: null, started: null, elapsedMs: null, result: null, timeline: [] };
-const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
-document.querySelector("#debug-local").hidden = !local;
+const destroy = mountMaskExplainer(document.querySelector("#mask-explainer"));
+window.addEventListener("pagehide", destroy, { once: true });
+new ResizeObserver(() => parent.postMessage({ type: "gateway-preview-height",
+  height: Math.ceil(page.getBoundingClientRect().height) }, location.origin)).observe(page);
+const direct = document.querySelector("#redaction-original"), gateway = document.querySelector("#redaction-send");
+const endpoint = "/api/gateway/redaction/live";
+const panels = { direct: document.querySelector("#redaction-baseline-result"), gateway: document.querySelector("#redaction-result") };
+const debug = document.querySelector("#redaction-debug"), toggle = document.querySelector("#redaction-debug-toggle");
+const copy = document.querySelector("#debug-copy"), timeline = document.querySelector("#debug-timeline");
+const labels = fixtureFields.map(f => f.label);
+const runs = { direct: null, gateway: null };
+let selected = "gateway";
+document.querySelector("#debug-local").hidden = !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
 document.querySelector("#debug-request").textContent = JSON.stringify(requestTemplate, null, 2);
-
-debugToggle.addEventListener("click", () => {
-  debug.hidden = !debug.hidden;
-  debugToggle.setAttribute("aria-expanded", String(!debug.hidden));
-});
-
-function renderRows(selector, rows) {
-  const list = document.querySelector(selector);
-  list.replaceChildren();
-  for (const [label, text] of rows) {
-    const term = document.createElement("dt");
-    const description = document.createElement("dd");
-    term.textContent = label;
-    description.textContent = text;
-    list.append(term, description);
+toggle.addEventListener("click", () => { debug.hidden = !debug.hidden; toggle.setAttribute("aria-expanded", String(!debug.hidden)); });
+for (const [mode, id] of [["direct", "#debug-direct"], ["gateway", "#debug-protected"]])
+  document.querySelector(id).addEventListener("click", () => { selected = mode; renderDebug(); });
+function rows(selector, values) {
+  const list = document.querySelector(selector); list.replaceChildren();
+  for (const [label, value] of values) {
+    const dt = document.createElement("dt"), dd = document.createElement("dd");
+    dt.textContent = label; dd.textContent = value; list.append(dt, dd);
   }
 }
-
+function paragraph(target, text, className) {
+  const p = document.createElement("p"); p.textContent = text;
+  if (className) p.className = className;
+  target.append(p); return p;
+}
+function show(mode, text) { panels[mode].replaceChildren(); paragraph(panels[mode], text); }
 function renderDebug() {
-  const result = diagnostics.result;
-  const unknown = "Not available";
-  document.querySelector("#debug-state").textContent = diagnostics.status;
-  renderRows("#debug-run", [
-    ["Job ID", diagnostics.jobId || unknown],
-    ["State", diagnostics.status],
-    ["Started", diagnostics.started || unknown],
-    ["Browser elapsed", diagnostics.elapsedMs === null ? unknown : (diagnostics.elapsedMs / 1000).toFixed(1) + " s"],
-  ]);
-  renderRows("#debug-gateway", [
-    ["Model alias", "r5r5-summary"],
-    ["HTTP status", result?.gatewayStatus ?? unknown],
-    ["Request ID", result?.gatewayRequestId || unknown],
-    ["Policy decision", result?.policyDecision || "Not reported by runner"],
-    ["Matched policy", result?.matchedPolicy || "Not reported by runner"],
-    ["Matched rule IDs", result?.gatewayRuleIds?.join("\n") || "Not reported by runner"],
-  ]);
-  renderRows("#debug-upstream", [
-    ["Receipt", result?.upstreamReceived === true ? "Received" : result?.upstreamReceived === false ? "No receipt observed" : unknown],
-    ...labels.map((label, i) => [label, result?.fields[i] || unknown]),
-    ["Summary preserved", result?.summaryPreserved === true ? "Yes" : result?.summaryPreserved === false ? "No" : unknown],
-  ]);
-  document.querySelector("#debug-observation").textContent = !result && diagnostics.status === "Failed"
-    ? "The run ended without a Gateway result. Check the request timeline; no protection outcome is confirmed."
-    : diagnosticObservation(result);
+  const run = runs[selected], result = run?.result, unavailable = "Not available";
+  document.querySelector("#debug-state").textContent = (selected === "direct" ? "Without Gateway" : "With Gateway") + " · " + (run?.status || "Not started");
+  document.querySelector("#debug-route").textContent = selected === "direct"
+    ? "Browser → Worker job → EKS adapter → Cloudflare Workers AI"
+    : "Browser → Worker job → EKS runner → AI Gateway → EKS adapter → Cloudflare Workers AI";
+  rows("#debug-run", [["Job ID", run?.id || unavailable], ["State", run?.status || "Not started"],
+    ["Started", run?.started || unavailable], ["Elapsed", run?.elapsedMs ? (run.elapsedMs / 1000).toFixed(1) + " s" : unavailable]]);
+  rows("#debug-gateway", [["Route", selected === "direct" ? "Direct · Gateway bypassed" : "Via AI Gateway"],
+    ["Model", result?.model || "@cf/meta/llama-3.2-3b-instruct"], ["HTTP status", result?.responseStatus ?? unavailable],
+    ["Gateway request ID", result?.gatewayRequestId || (selected === "direct" ? "Not used" : unavailable)],
+    ["Gateway decision", result?.gatewayErrorCode === "policy_violation" ? "Block · policy_violation" : selected === "direct" ? "Not used" : "Verify in Vision One Events"]]);
+  rows("#debug-upstream", [["Workers AI state", result?.modelStatus || unavailable], ["Model mode", result?.modelMode || unavailable],
+    ...labels.map((label, i) => [label, result?.fields?.[i] || unavailable]),
+    ["Amount and purpose preserved", result ? (result.summaryPreserved ? "Yes" : "Not confirmed") : unavailable]]);
+  document.querySelector("#debug-observation").textContent = result?.modelMode === "live"
+    ? "Workers AI completed inference. The input receipt is recorded by the Worker immediately before the model call. The displayed answer is the response returned through the selected route."
+    : "No completed live inference is confirmed for this test. Missing evidence alone does not prove a Gateway block.";
   document.querySelector("#debug-result").textContent = result ? JSON.stringify(result, null, 2) : "No result received.";
-  copy.disabled = !diagnostics.started;
+  timeline.replaceChildren();
+  for (const event of run?.timeline || []) {
+    const li = document.createElement("li"), time = document.createElement("span");
+    time.textContent = "+" + (event.elapsedMs / 1000).toFixed(1) + " s";
+    li.append(time, document.createTextNode(event.message)); timeline.append(li);
+  }
+  copy.disabled = !runs.direct && !runs.gateway;
+  document.querySelector("#debug-direct").setAttribute("aria-pressed", String(selected === "direct"));
+  document.querySelector("#debug-protected").setAttribute("aria-pressed", String(selected === "gateway"));
 }
-
-function trace(message) {
-  const elapsedMs = Math.max(0, Date.now() - Date.parse(diagnostics.started));
-  diagnostics.timeline.push({ elapsedMs, message });
-  const item = document.createElement("li");
-  const time = document.createElement("span");
-  time.textContent = "+" + (elapsedMs / 1000).toFixed(1) + " s";
-  item.append(time, document.createTextNode(message));
-  timeline.append(item);
-}
-
 copy.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2));
-    copy.textContent = "Copied";
-  } catch { copy.textContent = "Copy unavailable"; }
+  try { await navigator.clipboard.writeText(JSON.stringify(runs, null, 2)); copy.textContent = "Copied"; }
+  catch { copy.textContent = "Copy unavailable"; }
   setTimeout(() => { copy.textContent = "Copy diagnostics"; }, 1800);
 });
-renderDebug();
-
-original.addEventListener("click", () => {
-  input.open = true;
-  send.disabled = false;
-  send.focus();
-  renderRows("#redaction-baseline-fields", labels.map((label, i) => [label, fixtureFields[i].value]));
-  document.querySelector("#redaction-baseline-fields").hidden = false;
-});
-
-function show(text) {
-  const line = document.createElement("p");
-  line.textContent = text;
-  panel.replaceChildren(line);
-}
-
-async function jsonResponse(response) {
-  const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(body?.error || "The Gateway demo could not be reached.");
-  return body;
-}
-
-function showResult(result) {
-  const masked = result.fields.filter((field) => field === "masked").length;
-  const blocked = result.gatewayStatus >= 400 && result.gatewayErrorCode === "policy_violation";
-  show(blocked && result.upstreamReceived === false
-    ? `Blocked by Gateway · HTTP ${result.gatewayStatus} · policy_violation`
-    : result.upstreamReceived
-    ? `${masked} of 4 values masked · HTTP ${result.gatewayStatus}`
-    : `No upstream receipt · HTTP ${result.gatewayStatus}`);
-  panel.firstChild.className = "redaction-outcome";
-  if (blocked && result.upstreamReceived === false) {
-    const stopped = document.createElement("p");
-    stopped.textContent = "The Gateway denied the request before model delivery. No sensitive values were observed at the synthetic model.";
-    panel.append(stopped);
-  }
-  const fields = document.createElement("dl");
-  fields.className = "redaction-values";
-  const observed = inspectRedaction(fixtureBody, result.receivedText, fixtureFields);
-  labels.forEach((label, index) => {
-    const term = document.createElement("dt");
-    const value = document.createElement("dd");
-    term.textContent = label;
-    const code = document.createElement("code");
-    const status = document.createElement("span");
-    const state = result.fields[index];
-    code.textContent = state === "masked" ? observed.fieldValues[index] || "Masked"
-      : state === "unmasked" ? fixtureFields[index].value
-      : state === "no upstream receipt" ? "Not delivered" : "Not confirmed";
-    status.textContent = state === "masked" ? "Masked" : state === "unmasked" ? "Unmasked" : "";
-    status.className = "redaction-field-status";
-    value.dataset.state = state;
-    value.append(code, status);
-    fields.append(term, value);
-  });
-  panel.append(fields);
+function renderResult(mode, result) {
+  const panel = panels[mode]; panel.replaceChildren();
+  const masked = result.fields.filter(f => f === "masked").length;
+  paragraph(panel, result.gatewayErrorCode === "policy_violation" ? `Blocked by Gateway · HTTP ${result.responseStatus}`
+    : result.modelMode === "live" ? (mode === "direct" ? `Original request delivered · HTTP ${result.responseStatus}`
+      : `${masked} of 4 values masked · HTTP ${result.responseStatus}`)
+      : `Live inference not confirmed · HTTP ${result.responseStatus}`, "redaction-outcome");
   if (result.receivedText) {
-    const received = document.createElement("details");
-    received.className = "redaction-received";
-    received.open = true;
-    const heading = document.createElement("summary");
-    heading.textContent = "Received by the model";
-    const text = document.createElement("pre");
-    text.textContent = result.receivedText;
-    received.append(heading, text);
-    panel.append(received);
-  }
-  if (result.summaryPreserved) {
-    const summary = document.createElement("p");
-    summary.className = "redaction-summary";
-    summary.textContent = "Summary preserved · THB 1,250 · Millennium Falcon parking fee";
-    panel.append(summary);
-  }
-  if (result.gatewayRequestId) {
-    const requestId = document.createElement("p");
-    requestId.textContent = "Gateway request ID " + result.gatewayRequestId;
-    panel.append(requestId);
-  }
-}
-
-send.addEventListener("click", async () => {
-  original.disabled = send.disabled = true;
-  diagnostics = { status: "Submitting", jobId: null, started: new Date().toISOString(), elapsedMs: null, result: null, timeline: [] };
-  timeline.replaceChildren();
-  trace("Browser submitted the fixed synthetic fixture job.");
-  renderDebug();
-  show("Waiting for the EKS runner…");
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
+    const observed = inspectRedaction(fixtureBody, result.receivedText, fixtureFields);
+    const dl = document.createElement("dl"); dl.className = "redaction-values";
+    labels.forEach((label, i) => {
+      const dt = document.createElement("dt"), dd = document.createElement("dd"), code = document.createElement("code");
+      dt.textContent = label; code.textContent = observed.fieldValues[i] || "Not confirmed";
+      dd.dataset.state = observed.fields[i]; dd.append(code); dl.append(dt, dd);
     });
-    trace("Worker job creation returned HTTP " + response.status + ".");
-    const queued = await jsonResponse(response);
-    diagnostics.jobId = queued.id;
-    diagnostics.status = "Queued";
-    trace("Job queued for the EKS runner.");
-    renderDebug();
-    const until = Date.now() + 110_000;
+    panel.append(dl);
+    const details = document.createElement("details"), heading = document.createElement("summary"), text = document.createElement("pre");
+    details.className = "redaction-received"; heading.textContent = "Input submitted to Workers AI";
+    text.textContent = result.receivedText; details.append(heading, text); panel.append(details);
+  }
+  if (result.reply) {
+    const heading = document.createElement("h3"); heading.textContent = "Model response"; panel.append(heading);
+    paragraph(panel, result.reply, "redaction-model-response");
+    paragraph(panel, result.model, "redaction-label");
+  }
+  if (result.gatewayRequestId) paragraph(panel, "Gateway request ID " + result.gatewayRequestId, "redaction-label");
+}
+async function responseJson(response) {
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.error || "The live demo could not be reached.");
+  return data;
+}
+async function start(mode) {
+  direct.disabled = gateway.disabled = true; selected = mode;
+  document.querySelector("#redaction-input").open = true;
+  const run = runs[mode] = { mode, status: "Submitting", id: null, started: new Date().toISOString(), elapsedMs: null, result: null, timeline: [] };
+  const trace = message => { run.timeline.push({ elapsedMs: Date.now() - Date.parse(run.started), message }); renderDebug(); };
+  show(mode, "Queued · Waiting for the EKS runner…"); trace("Submitted a fresh fixed-fixture inference job.");
+  try {
+    const queued = await responseJson(await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode }) }));
+    run.id = queued.id; run.status = "Queued"; trace("Job queued for " + mode + " delivery.");
+    const until = Date.now() + 160000;
     while (Date.now() < until) {
-      await new Promise((resolve) => setTimeout(resolve, 2200));
-      const job = await jsonResponse(await fetch(endpoint + "/" + encodeURIComponent(queued.id)));
-      if (job.status === "failed") {
-        trace("Runner reported a failed job; no Gateway result was provided.");
-        throw new Error("The EKS runner could not complete the test.");
-      }
+      await new Promise(resolve => setTimeout(resolve, 2200));
+      const job = await responseJson(await fetch(endpoint + "/" + encodeURIComponent(run.id)));
+      if (job.mode !== mode) throw new Error("The returned run does not match this comparison side.");
+      if (job.status === "failed") throw new Error("The live request did not complete. No example reply was substituted.");
       if (job.status === "done") {
-        diagnostics.result = diagnosticResult(job.result);
-        diagnostics.status = "Completed";
-        trace("Runner result received. Upstream evidence checked by runner.");
-        showResult(job.result);
-        return;
+        run.result = job.result; run.status = "Completed"; renderResult(mode, job.result);
+        trace("Received transport result and Worker-recorded model evidence."); return;
       }
-      if (job.status === "running") {
-        if (diagnostics.status !== "Running") trace("EKS runner claimed the job.");
-        diagnostics.status = "Running";
-        show("Sending the request through Gateway…");
-        renderDebug();
+      if (job.status === "running" && run.status !== "Running") {
+        run.status = "Running"; trace("EKS runner claimed this job.");
+        show(mode, mode === "direct" ? "In progress · Sending directly to Workers AI…" : "In progress · Sending through AI Gateway to Workers AI…");
       }
     }
-    throw new Error("The Gateway demo timed out. Try again in a moment.");
-  } catch (error) {
-    diagnostics.status = "Failed";
-    // Copy only this app's bounded error category, never arbitrary error bodies.
-    trace("Run did not complete. Gateway protection remains unverified.");
-    show(error.message);
-  } finally {
-    diagnostics.elapsedMs = Math.max(0, Date.now() - Date.parse(diagnostics.started));
-    renderDebug();
-    original.disabled = send.disabled = false;
-  }
-});
+    throw new Error("This run timed out. Reload before starting another test.");
+  } catch (error) { run.status = "Failed"; show(mode, error.message); trace("No successful outcome is confirmed."); }
+  finally { run.elapsedMs = Date.now() - Date.parse(run.started); direct.disabled = gateway.disabled = false; renderDebug(); }
+}
+direct.addEventListener("click", () => start("direct"));
+gateway.addEventListener("click", () => start("gateway"));
+renderDebug();

@@ -29,21 +29,20 @@
         </dl>
       </details>
       <div class="redaction-actions" aria-label="Demo steps">
-        <button id="redaction-original" type="button">1. Show original request</button>
-        <button id="redaction-send" type="button" disabled>2. Send through Gateway</button>
+        <button id="redaction-original" type="button">1. Send without Gateway</button>
+        <button id="redaction-send" type="button">2. Send through Gateway</button>
         <button id="redaction-debug-toggle" type="button" aria-expanded="false" aria-controls="redaction-debug">Debug</button>
       </div>
 
       <div class="redaction-comparison">
         <section class="redaction-panel" aria-labelledby="redaction-direct">
           <h2 id="redaction-direct">Without Gateway</h2>
-          <p class="redaction-label">Recorded direct request · synthetic baseline</p>
-          <p>The synthetic summarizer received all four original values and returned a summary.</p>
-          <dl id="redaction-baseline-fields" class="redaction-values" hidden></dl>
+          <p class="redaction-label">Live · Cloudflare Workers AI</p>
+          <div id="redaction-baseline-result" aria-live="polite"><p>Send the original request directly to the model.</p></div>
         </section>
         <section class="redaction-panel" aria-labelledby="redaction-gateway">
           <h2 id="redaction-gateway">With Gateway</h2>
-          <p class="redaction-label">Live EKS run</p>
+          <p class="redaction-label">Live · Gateway → Cloudflare Workers AI</p>
           <div id="redaction-result" aria-live="polite">
             <p>Send the synthetic request to see how the Gateway handles it.</p>
           </div>
@@ -55,11 +54,12 @@
           <div><h2 id="redaction-debug-title">Run diagnostics</h2><p id="debug-state" class="redaction-label" aria-live="polite">No request sent</p></div>
           <button id="debug-copy" type="button" disabled>Copy diagnostics</button>
         </div>
-        <p id="debug-local" class="debug-notice" hidden>Local UI preview. The live EKS runner is not connected here.</p>
-        <p class="debug-route">Browser <span>→</span> Worker <span>→</span> EKS runner <span>→</span> AI Gateway <span>→</span> Synthetic model</p>
+        <p id="debug-local" class="debug-notice" hidden>Local UI preview. Live requests are available on demo.nattavut.online.</p>
+        <p id="debug-route" class="debug-route">Select a test to inspect its route.</p>
+        <div class="redaction-actions"><button id="debug-direct" type="button">Without Gateway</button><button id="debug-protected" type="button">With Gateway</button></div>
         <div class="debug-grid">
           <section><h3>Run</h3><dl id="debug-run"></dl></section>
-          <section><h3>Gateway</h3><dl id="debug-gateway"></dl></section>
+          <section><h3>Transport</h3><dl id="debug-gateway"></dl></section>
           <section><h3>Upstream evidence</h3><dl id="debug-upstream"></dl></section>
         </div>
         <div id="debug-observation" class="debug-notice">Run the test to inspect the observed result.</div>
@@ -70,7 +70,7 @@
       </section>
 
       <footer>
-        <span>Only the synthetic refund fixture is sent.</span>
+        <span>Synthetic data · Real Workers AI responses · Same model in both tests.</span>
         <a href="https://portal.xdr.trendmicro.com/index.html#/app/ai-app-sec?path=%2Fgateway%2Fevents" target="_blank" rel="noopener noreferrer">Open Vision One Events ↗</a>
       </footer>
     </main>

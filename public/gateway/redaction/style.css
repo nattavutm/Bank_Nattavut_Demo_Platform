@@ -169,3 +169,6 @@
 .redaction .debug-footnote { margin-top: 20px; color: #909090; font-size: 13px; line-height: 1.6; }
 @media (max-width: 900px) { .debug-grid { grid-template-columns: 1fr; gap: 22px; } }
 @media (max-width: 480px) { .debug-heading { flex-direction: column; } .redaction #redaction-debug-toggle { margin-left: 0; } }
+
+.redaction .redaction-model-response { white-space: pre-wrap; overflow-wrap: anywhere; color: #e4e4e4; line-height: 1.7; }
+.redaction #debug-direct[aria-pressed="true"], .redaction #debug-protected[aria-pressed="true"] { background: #302124; border-color: #8d2833; color: #fff; }
