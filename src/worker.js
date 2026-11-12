@@ -1,5 +1,6 @@
 import {gatewayApi} from './gateway/index.js';
 import {redactionApi} from './gateway/redaction.js';
+import {liveRedactionApi} from './gateway/live-redaction.js';
 import { scannerApi, scannerService } from './scanner.js';
 import { authorize } from './auth.js';
 import {MODEL,GUARD_URL} from './constants.js';
@@ -90,7 +91,11 @@ export default {async fetch(request,env){
   const path = new URL(request.url).pathname;
   if (path === '/api/gateway/redaction/runner/claim' || path === '/api/gateway/redaction/runner/finish')
     return redactionApi(request, env, true);
+  if (['/api/gateway/redaction/live/runner/claim', '/api/gateway/redaction/live/runner/finish', '/api/gateway/redaction/live/inference'].includes(path))
+    return liveRedactionApi(request, env, true);
   const auth=await authorize(request,env);if(auth)return auth;
+  if (path === '/api/gateway/redaction/live' || path.startsWith('/api/gateway/redaction/live/'))
+    return liveRedactionApi(request, env);
   const response = path === '/api/gateway/redaction' || path.startsWith('/api/gateway/redaction/')
     ? await redactionApi(request, env)
     : path.startsWith('/api/gateway/') ? await gatewayApi(request, env) : await app.fetch(request, env);

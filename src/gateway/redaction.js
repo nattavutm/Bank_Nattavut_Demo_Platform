@@ -35,7 +35,7 @@ async function sessionOwner(request) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function verifyRunner(request, env, path, body) {
+export async function verifyRunner(request, env, path, body) {
   const time = request.headers.get("X-Redaction-Time");
   const signature = request.headers.get("X-Redaction-Signature");
   if (!/^\d{13}$/.test(time ?? "") || Math.abs(Date.now() - Number(time)) > 45_000 ||

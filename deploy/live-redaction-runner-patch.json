@@ -1,0 +1,14 @@
+{
+  "spec": {
+    "strategy": {"type":"Recreate","rollingUpdate":null},
+    "template": {"spec":{"containers":[{
+      "name":"runner", "command":["node","--preserve-symlinks-main","/runner/live.mjs"],
+      "env":[
+        {"name":"GATEWAY_DEMO_CONTROL_KEY","$patch":"delete"},
+        {"name":"GATEWAY_DEMO_UPSTREAM_KEY","valueFrom":{"secretKeyRef":{"name":"r5r5-upstream-keys","key":"GATEWAY_DEMO_UPSTREAM_KEY"}}}
+      ],
+      "ports":[{"name":"inference","containerPort":4892}],
+      "readinessProbe":{"tcpSocket":{"port":4892},"initialDelaySeconds":2,"periodSeconds":3}
+    }]}}
+  }
+}
