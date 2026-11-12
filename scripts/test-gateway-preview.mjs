@@ -99,6 +99,8 @@ test("Only the authenticated Gateway view permits same-origin framing", async ()
   const framedPages = [
     "/gateway/index.html",
     "/gateway/",
+    "/gateway/invoice/",
+    "/gateway/invoice/index.html",
     "/gateway/fallback/index.html",
     "/gateway/fallback/",
     "/gateway/redaction/index.html",
@@ -128,6 +130,6 @@ test('platform catalog exposes the current Gateway cases and retires old executi
  const login=await worker.fetch(new Request('https://demo.test/api/login',{method:'POST',headers:{Origin:'https://demo.test','Content-Type':'application/json'},body:JSON.stringify({password:'unit-test-password-only'})}),env);
  const headers={Cookie:login.headers.get('set-cookie').split(';')[0]};
  const catalog=await (await worker.fetch(new Request('https://demo.test/api/gateway/scenarios',{headers}),env)).json();
- assert.deepEqual(catalog.scenarios.map(x=>x.id),['database-deletion','card-redaction','model-fallback']);
+ assert.deepEqual(catalog.scenarios.map(x=>x.id),['invoice-payment','database-deletion','card-redaction','model-fallback']);
  for(const path of ['compare/s03','profiles','data/customers','reset'])assert.equal((await worker.fetch(new Request('https://demo.test/api/gateway/'+path,{headers}),env)).status,410);
 });

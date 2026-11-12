@@ -1,6 +1,6 @@
 # Primary Model Fails, App Keeps Responding
 
-Rollout status: application and bounded model endpoints prepared. Live routing verification is pending Vision One sign-in/configuration. Unit-test routing is simulated and is not production Gateway evidence.
+Rollout status: live Gateway routing verified on 2026-11-12. Both normal controls reached Primary. During the controlled outage, Direct returned 503; Gateway reached Primary (503), then Backup (200), and returned Backup's actual Workers AI answer. Unit tests use a simulated Gateway and are separate from this live evidence.
 
 ## Presentation
 
@@ -28,7 +28,7 @@ Reuse the existing inactive demo providers, retaining their `GATEWAY_DEMO_UPSTRE
 | `r5r5-demo-primary` | `https://demo.nattavut.online/api/gateway/fallback/primary` | `r5r5-primary-model` | `r5r5-primary` |
 | `r5r5-demo-backup` | `https://demo.nattavut.online/api/gateway/fallback/backup` | `r5r5-backup-model` | `r5r5-backup` |
 
-Serve these two models. Create one routing rule matching **exactly** `r5r5-continuity`, route to alias `r5r5-primary` with that model's weight 100, fallback to `r5r5-backup`. Enable after checking the values. Do not use a wildcard, change tenant-wide defaults or edit existing mask/MCP policies. All new resources are synthetic demo resources.
+Both models are served. The enabled rule **r5r5 demo - Primary to Backup** matches **exactly** `r5r5-continuity`, routes to alias `r5r5-primary` with that model's weight 100, and falls back to `r5r5-backup` (priority 0). Do not use a wildcard, change tenant-wide defaults or edit existing mask/MCP policies. All resources are synthetic demo resources.
 
 Official reference: [TrendAI Gateway Controls — Routing rules](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-AIG-controls). The documentation supports ordered fallback aliases; eligibility of this controlled HTTP 503 must be verified against the installed Gateway rather than generalized to all errors.
 
@@ -64,3 +64,11 @@ An HTTP 200 alone, a matching error string, missing logs or a fabricated respons
 - Existing database and masking cases continue to work. No changes to AI Chat, AI Guard, Scanner, other Vision One solutions or subscription plans.
 
 This uses existing Cloudflare bindings and quota. Free-tier quotas and vendor entitlement still apply; no plan upgrade is performed.
+
+## Recorded live UAT — 2026-11-12
+
+Run `4ebd957d-0aa8-40f3-a23c-da1426518632` completed both phases. The outage Gateway call `9d8eb6e3-24f4-4c62-becb-949185f48247` recorded one Primary receipt with controlled 503 followed by one completed Backup receipt with 200. Its returned answer matched the Backup receipt. Direct received only Primary 503. Both normal calls recorded Primary 200 and no Backup receipt.
+
+The outage response header returned Gateway request ID `01a1cfa8-aeee-7597-8140-2ddb6c23a123`. Vision One LLM event `01a1cfa8-aeee-7639-bdfb-0e332a376a2c` has that same request ID, requested model `r5r5-continuity`, and resource `r5r5-demo-backup/r5r5-backup-model`. The normal response returned request ID `01a1cfa8-5246-7459-9d4c-890d1d5ef969`.
+
+These are historical verification IDs, not links or IDs for future runs. The test proves fallback for the installed Gateway's controlled 503 behavior; it does not establish fallback for every error or a real provider outage.

@@ -16,6 +16,7 @@
       name: "AI Gateway",
       preview: true,
       items: [
+        {name: 'Review Invoices. Prevent Unauthorized Payments.', route:'#gateway/invoice-payment'},
         {name: 'Check Status, Prevent Database Deletion', route:'#gateway/database-deletion'},
         {name: 'Mask Sensitive Data Before Inference', route:'#gateway/card-redaction'},
         {name: 'Primary Model Fails, App Keeps Responding', route:'#gateway/model-fallback'},

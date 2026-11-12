@@ -1,3 +1,4 @@
+import {invoiceApi} from './gateway/invoice.js';
 import {fallbackApi} from './gateway/fallback.js';
 import {databaseApi} from './gateway/database.js';
 import {redactionApi} from './gateway/redaction.js';
@@ -96,17 +97,19 @@ export default {async fetch(request,env){
   if (['/api/gateway/redaction/live/runner/claim', '/api/gateway/redaction/live/runner/finish', '/api/gateway/redaction/live/inference'].includes(path))
     return liveRedactionApi(request, env, true);
   if(/^\/api\/gateway\/fallback\/(primary|backup)\/v1\/(models|chat\/completions)$/.test(path))return fallbackApi(request,env,true);
+  if(path==='/api/gateway/invoice/mcp')return invoiceApi(request,env,true);
   if(path==='/api/gateway/database/mcp')return databaseApi(request,env,true);
   const auth=await authorize(request,env);if(auth)return auth;
   if(path.startsWith('/api/gateway/fallback/'))return fallbackApi(request,env);
+  if(path.startsWith('/api/gateway/invoice/'))return invoiceApi(request,env);
   if(path.startsWith('/api/gateway/database/'))return databaseApi(request,env);
-  if(path==='/api/gateway/scenarios')return json({scenarios:[{id:'database-deletion',title:'Check Status, Prevent Database Deletion'},{id:'card-redaction',title:'Mask Sensitive Data Before Inference'},{id:'model-fallback',title:'Primary Model Fails, App Keeps Responding'}]});
+  if(path==='/api/gateway/scenarios')return json({scenarios:[{id:'invoice-payment',title:'Review Invoices. Prevent Unauthorized Payments.'},{id:'database-deletion',title:'Check Status, Prevent Database Deletion'},{id:'card-redaction',title:'Mask Sensitive Data Before Inference'},{id:'model-fallback',title:'Primary Model Fails, App Keeps Responding'}]});
   if (path === '/api/gateway/redaction/live' || path.startsWith('/api/gateway/redaction/live/'))
     return liveRedactionApi(request, env);
   const response = path === '/api/gateway/redaction' || path.startsWith('/api/gateway/redaction/')
     ? await redactionApi(request, env)
     : path.startsWith('/api/gateway/') ? json({error:'This archived Gateway use case has been retired.'},410) : await app.fetch(request, env);
-  const gatewayView = ['/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html','/gateway/database/','/gateway/database/index.html','/gateway/fallback/','/gateway/fallback/index.html'].includes(path);
+  const gatewayView = ['/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html','/gateway/database/','/gateway/database/index.html','/gateway/fallback/','/gateway/fallback/index.html','/gateway/invoice/','/gateway/invoice/index.html'].includes(path);
   const headers = new Headers(response.headers);
   headers.set('Cache-Control', 'no-store');
   headers.set('X-Frame-Options', gatewayView ? 'SAMEORIGIN' : 'DENY');
