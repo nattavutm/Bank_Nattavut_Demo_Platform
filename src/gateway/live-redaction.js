@@ -125,7 +125,11 @@ async function cloudflareExecute(env, db, id, mode, claim) {
     result = { responseStatus: response.status, gatewayRequestId: mode === "gateway" ? response.headers.get("x-request-id") : null,
       gatewayErrorCode: mode === "gateway" && response.status >= 400 && payload?.error?.code === "policy_violation" ? "policy_violation" : null,
       reply: typeof payload?.choices?.[0]?.message?.content === "string" ? payload.choices[0].message.content : null };
-  } catch { /* Do not bypass the Gateway or substitute a fixture answer. */ }
+  } catch (error) {
+    // Fixed-destination transport diagnostics only; never log credentials or request bodies.
+    console.warn("r5r5 private Gateway transport failed", String(error?.message || "Unknown transport error")
+      .replace(/[A-Za-z0-9_\-+/=]{40,}/g, "[redacted]").slice(0, 300));
+  }
   await finish(db, { id, claim, result }, Date.now());
 }
 
