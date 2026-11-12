@@ -6,7 +6,7 @@ Rollout status: live Gateway routing verified on 2026-11-12. Both normal control
 
 Open `/#gateway/model-fallback` under AI Gateway. Keep the existing database-deletion and data-masking cases.
 
-1. **Run normal request** sends the same fixed, synthetic R2-D2 status task on two independent routes. Both should receive a primary-endpoint answer.
+1. **Run normal request** sends the same editable synthetic task (R2-D2 status by default) on two independent routes. Both should receive a primary-endpoint answer.
 2. **Simulate primary failure** repeats that task. The primary endpoint returns HTTP 503 only for this phase's scoped calls. Without Gateway fails. With Gateway should reach Backup and still return an answer, requesting `r5r5-continuity` throughout.
 
 Primary and Backup are controlled Cloudflare adapter endpoints backed by the existing Workers AI model. This demonstrates Gateway routing between endpoints; it does not claim to reproduce an outage at an external vendor or to switch between two different underlying model families. The AI answers are live, not fixtures.
@@ -37,12 +37,12 @@ Official reference: [TrendAI Gateway Controls — Routing rules](https://docs.tr
 - Browser endpoints: `/api/gateway/fallback/config`, `POST .../runs` with `{}`, `GET .../runs/:id`, `POST .../runs/:id/step` with `{"step":"normal"}` or `{"step":"outage"}`. Existing verified web login is required. Ownership derives from the session, never request JSON. Mutations require exact same-origin requests and ordered steps with an atomic run lock.
 - Upstream-only endpoints: `GET .../(primary|backup)/v1/models`, `POST .../(primary|backup)/v1/chat/completions`. Require the existing upstream Bearer credential, verified against its stored SHA-256 fingerprint.
 - The coordinator creates a random, run/call-bound context with a 30-minute run lifetime. The model adapter checks it against a running call and the allowed destination set. Closing a call fences future receipt claims; replay after closure is rejected.
-- The control envelope is stripped before inference. Workers AI receives only the server-owned system instruction and the fixed synthetic task, never the context proof, Virtual Key or upstream credential.
+- The control envelope is stripped before inference. Workers AI receives only the server-owned system instruction and the comparison’s saved synthetic task, never the context proof, Virtual Key or upstream credential.
 - Provider retries increment the receipt count but cannot invoke AI twice for the same call/provider. Repeated primary errors are capped at eight attempts. A new comparison creates fresh runs rather than deleting someone else's active run.
 
 ## Evidence contract
 
-The snapshot contains `gateway_mode: live`, `model_mode: live`, `outage_mode: controlled`, requested model, fixed prompt, transport status and provider receipts. No private context proof or credential is returned.
+The snapshot contains `gateway_mode: live`, `model_mode: live`, `outage_mode: controlled`, requested model, saved prompt, transport status and provider receipts. No private context proof or credential is returned.
 
 `fallback_observed` requires all of:
 
@@ -59,7 +59,7 @@ An HTTP 200 alone, a matching error string, missing logs or a fabricated respons
 - Controlled outage: Direct records Primary 503 and no Backup; Gateway records Primary 503, Backup 200 and returns Backup's actual answer with unchanged requested-model name.
 - Gateway's real Routing/LLM Events are checked separately; an event ID is not invented or reused in subsequent runs.
 - A disabled/misconfigured Gateway route cannot be rescued by application code.
-- Invalid ownership, origin, context, edited task/model/destination and replay are rejected.
+- Invalid ownership, origin, context, mid-call prompt substitution, edited model/destination and replay are rejected.
 - Failed normal controls can be retried after configuration is repaired; prior failed receipts remain visible.
 - Existing database and masking cases continue to work. No changes to AI Chat, AI Guard, Scanner, other Vision One solutions or subscription plans.
 
@@ -72,3 +72,9 @@ Run `4ebd957d-0aa8-40f3-a23c-da1426518632` completed both phases. The outage Gat
 The outage response header returned Gateway request ID `01a1cfa8-aeee-7597-8140-2ddb6c23a123`. Vision One LLM event `01a1cfa8-aeee-7639-bdfb-0e332a376a2c` has that same request ID, requested model `r5r5-continuity`, and resource `r5r5-demo-backup/r5r5-backup-model`. The normal response returned request ID `01a1cfa8-5246-7459-9d4c-890d1d5ef969`.
 
 These are historical verification IDs, not links or IDs for future runs. The test proves fallback for the installed Gateway's controlled 503 behavior; it does not establish fallback for every error or a real provider outage.
+
+## Editable prompt and illustration
+
+The composer sends the edited user text verbatim to both routes. A prompt is fixed for one comparison, including both normal and outage phases. Editing it starts a new comparison; it cannot reuse old receipts. The authenticated adapter rejects a user message that differs from the saved run text before invoking Workers AI. System instruction, routing model, destination and scoped context remain server-owned. The server never sends context proofs or credentials to Workers AI.
+
+The separate Without/With diagram illustrates normal and primary-failure paths. It uses a local animation clock only, never triggers inference, changes routing or reads live evidence. Pause, keyboard tab switching, mobile layout and reduced-motion static outcomes are supported. The input composer and the live result panels remain separate from this illustration.

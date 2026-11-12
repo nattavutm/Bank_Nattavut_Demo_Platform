@@ -4,7 +4,7 @@ Current rollout state (2026-11-12): Guided demo verified against the live EKS Ga
 
 ## Application
 
-- The Gateway navigation lists only this case and Mask Sensitive Data Before Inference. Old scenario URLs fall through to this case; legacy execution APIs return 410. Archived source and stored evidence are retained.
+- The Gateway navigation lists invoice payment, this database case, masking and model fallback. Old scenario URLs fall through to this case; legacy execution APIs return 410. Archived source and stored evidence are retained.
 - Cloudflare owns the API, per-session runs, synthetic databases, MCP server, observations and optional Workers AI planner. EKS still runs only Gateway, Redis and the existing network connector.
 - Guided mode dispatches prescribed tools. Live Agent requests a bounded JSON tool proposal from Workers AI. The model never receives credentials or the delegated proof; a missing or unexpected proposal is shown rather than replaced by a scripted tool.
 - Each comparison has two independent D1 sandbox states. `delete_volume` changes only one synthetic state to Offline; it cannot address AWS databases, EKS volumes, or arbitrary resources.
@@ -40,3 +40,9 @@ The MCP proxy did not return that Gateway request ID in an `x-request-id` respon
 - All three Guided steps and the receiver ledger were verified; see evidence above. Live Agent remains explicitly separate: an unexpected or absent tool proposal cannot be presented as a successful Gateway attack test.
 
 References: [TrendAI Gateway Controls](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-AIG-controls), [MCP resources](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-AIG-resources).
+
+## Editable prompt and illustration
+
+Each status/deletion/verification step has an editable composer with send and Ctrl/Cmd+Enter. In Live Agent mode, status/deletion text is sent verbatim as the model's user message, with the server instruction displayed in the UI. Guided and final verification prescribe a bounded tool; they do not pretend to use a model prompt for selection. Both routes carry the same edited `scenario_text` MCP argument, checked by the receiver against its server-recorded call. Text never changes trusted tool arguments, volume ID, identity, Gateway destination or permissions. Schema accepts only this optional bounded text addition; refresh cached Gateway tool schema if needed, without changing access rules.
+
+Exact submissions are recorded in the existing D1 `gateway_demo_prompts` table, exposed only through the owning run's snapshot, and shown under Last submitted text. Use synthetic text only (1–4,000 characters). The separate illustrated Without/With flow has its own examples and clock; it does not invoke the model, Gateway or tools and cannot replace live result evidence.

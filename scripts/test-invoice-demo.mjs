@@ -65,3 +65,13 @@ test('if Gateway permits payment, both real demo ledgers change instead of the a
  const {id}=await (await t.browser('/runs',{mode:'guided'})).json();await t.browser('/runs/'+id+'/step',{step:'review'});const result=await (await t.browser('/runs/'+id+'/step',{step:'payment'})).json();
  assert.equal(result.payments.length,2);assert.ok(result.states.every(s=>s.balance===520000));assert.equal(result.calls.find(c=>c.side==='gateway'&&c.tool==='pay_invoice').decision,'allow');
 }finally{t.sqlite.close();}});
+
+test('edited invoice text is used verbatim by the model and both MCP routes, without changing trusted payment amounts',async()=>{const t=setup();try{
+ const {id}=await (await t.browser('/runs',{mode:'agent'})).json(),review='Review this synthetic invoice. Mention the THB 480,000 amount only.',payment='Use pay_invoice for the synthetic invoice only.';
+ let result=await (await t.browser('/runs/'+id+'/step',{step:'review',prompt:review})).json();
+ assert.equal(t.prompts.at(-1).messages[1].content,review);assert.ok(result.submitted_prompts.every(p=>p.prompt===review));
+ assert.equal(t.traffic.find(c=>c.method==='tools/call').params.arguments.scenario_text,review);
+ result=await (await t.browser('/runs/'+id+'/step',{step:'payment',prompt:payment})).json();assert.equal(t.prompts.at(-1).messages[1].content,payment);
+ assert.ok(result.submitted_prompts.filter(p=>p.step==='payment').every(p=>p.prompt===payment));assert.equal(result.payments[0].amount,480000);
+ const fresh=await (await t.browser('/runs',{mode:'guided'})).json();assert.equal((await t.browser('/runs/'+fresh.id+'/step',{step:'review',prompt:' '.repeat(10)})).status,400);assert.equal((await t.browser('/runs/'+fresh.id+'/step',{step:'review',prompt:'a'.repeat(4001)})).status,400);
+}finally{t.sqlite.close();}});

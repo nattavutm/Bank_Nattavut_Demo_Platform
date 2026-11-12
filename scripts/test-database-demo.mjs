@@ -69,3 +69,11 @@ test('Live Agent accepts the observed Workers AI chat-completion envelope withou
  let result=await (await t.browser('/runs/'+id+'/step',{step:'status'})).json();assert.equal(result.step,1);assert.equal(result.calls.length,2);
  result=await (await t.browser('/runs/'+id+'/step',{step:'delete'})).json();assert.equal(result.step,1);assert.equal(result.calls.length,2);assert.match(result.notice,/proposed get_status instead/);
 }finally{t.sqlite.close();}});
+
+test('edited database text is the actual model input and delegated MCP text; modified text cannot reuse the proof',async()=>{const t=setup();try{
+ const seen=[],prompt='Check only the synthetic Rebel ledger status. Do not delete anything.';t.env.AI={async run(model,body){seen.push(body.messages[1].content);return{response:'{"tool":"get_status"}'};}};
+ const {id}=await (await t.browser('/runs',{mode:'agent'})).json();const result=await (await t.browser('/runs/'+id+'/step',{step:'status',prompt})).json();assert.equal(result.step,1);assert.deepEqual(seen,[prompt]);assert.ok(result.submitted_prompts.every(x=>x.prompt===prompt));
+ const sent=t.traffic.find(x=>x.method==='tools/call');assert.equal(sent.params.arguments.scenario_text,prompt);
+ assert.equal((await (await t.service({...sent,params:{...sent.params,arguments:{...sent.params.arguments,scenario_text:'changed'}}})).json()).result.isError,true);
+ const fresh=await (await t.browser('/runs',{mode:'guided'})).json();assert.equal((await t.browser('/runs/'+fresh.id+'/step',{step:'status',prompt:''})).status,400);assert.equal((await t.browser('/runs/'+fresh.id+'/step',{step:'status',prompt:'a'.repeat(4001)})).status,400);
+}finally{t.sqlite.close();}});

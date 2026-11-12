@@ -43,7 +43,7 @@ test('expired context, edited requests, foreign sessions and browser-owned confi
  assert.equal((await t.browser('/runs',{model:'external-model'})).status,400);assert.equal((await t.browser('/runs/'+id+'/step',{step:'outage'})).status,409);
  assert.equal((await t.browser('/runs/'+id+'/step',{step:'normal',url:'https://other.test'})).status,409);assert.equal((await t.browser('/runs/'+id+'/step',{step:'normal'},'one','https://other.test')).status,403);
  await t.browser('/runs/'+id+'/step',{step:'normal'});const replay=t.upstream[0];assert.equal((await t.service(replay.provider,replay.body)).status,409);
- assert.equal((await t.service(replay.provider,replay.body,'bad-key')).status,401);assert.equal((await t.service(replay.provider,{...replay.body,messages:[{role:'system',content:'forged'},{role:'user',content:'other'}]})).status,400);
+ assert.equal((await t.service(replay.provider,replay.body,'bad-key')).status,401);assert.equal((await t.service(replay.provider,{...replay.body,messages:[{role:'system',content:'forged'},{role:'user',content:'other'}]})).status,401);
  assert.equal(t.inferences,2);
 }finally{t.sqlite.close();}});
 test('failed baseline and actual inference errors never become a successful fallback control',async()=>{const t=setup();try{
@@ -75,4 +75,13 @@ test('a failed normal control can recover after configuration is fixed, using th
  const infer=t.env.AI.run;t.env.AI.run=async()=>{throw new Error('offline');};const {id}=await (await t.browser('/runs',{})).json();
  let result=await (await t.browser('/runs/'+id+'/step',{step:'normal'})).json();assert.equal(result.step,0);
  t.env.AI.run=infer;result=await (await t.browser('/runs/'+id+'/step',{step:'normal'})).json();assert.equal(result.step,1);assert.equal(result.calls.length,4);
+}finally{t.sqlite.close();}});
+
+test('an edited comparison prompt reaches both models unchanged and cannot be swapped by the upstream caller',async()=>{const t=setup();try{
+ const prompt='Report that Chewbacca repaired the hyperdrive. Departure at 21:00.',seen=[];const ai=t.env.AI.run;t.env.AI.run=async(model,body)=>{seen.push(body.messages[1].content);return ai(model,body);};
+ const gateway=t.env.AI_GATEWAY.fetch;t.env.AI_GATEWAY.fetch=async(url,opts)=>{const body=JSON.parse(opts.body);const edited={...body,messages:[body.messages[0],{role:'user',content:'different prompt'}]};assert.equal((await t.service('primary',edited)).status,400);return gateway(url,opts);};
+ const run=await (await t.browser('/runs',{prompt})).json();assert.equal(run.prompt,prompt);
+ await t.browser('/runs/'+run.id+'/step',{step:'normal'});const result=await (await t.browser('/runs/'+run.id+'/step',{step:'outage'})).json();
+ assert.deepEqual(seen,[prompt,prompt,prompt]);assert.ok(t.traffic.every(x=>x.messages[1].content===prompt));assert.equal(result.prompt,prompt);assert.equal(result.calls.at(-1).fallback_observed,true);
+ assert.equal((await t.browser('/runs',{prompt:''})).status,400);assert.equal((await t.browser('/runs',{prompt:'a'.repeat(4001)})).status,400);
 }finally{t.sqlite.close();}});

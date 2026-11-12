@@ -1,9 +1,11 @@
+import {createPromptComposer} from '../prompt-composer.js';
 const root=document.querySelector('#database-app');
 new ResizeObserver(()=>parent.postMessage({type:'gateway-preview-height',height:Math.ceil(root.getBoundingClientRect().height)},location.origin)).observe(root);
 const BASE='/api/gateway/database';let mode='guided',run=null,busy=false,configured=false;
 const $=selector=>document.querySelector(selector);
+const composer=createPromptComposer({host:document.querySelector('#db-composer'),kind:'database',steps:["status", "delete", "verify"],onSend:()=>document.querySelector('[data-step]:not(:disabled)')?.click(),onEdit:()=>{if(run?.step>=3){run=null;render();}}});
 async function api(path,body){const response=await fetch(BASE+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||'The demo did not complete.');return data;}
-function controls(){for(const button of document.querySelectorAll('[data-step]'))button.disabled=busy||!configured||['status','delete','verify'].indexOf(button.dataset.step)!==(run?.step??0);for(const button of document.querySelectorAll('[data-mode],#db-new'))button.disabled=busy;}
+function controls(){for(const button of document.querySelectorAll('[data-step]'))button.disabled=busy||!configured||['status','delete','verify'].indexOf(button.dataset.step)!==(run?.step??0);for(const button of document.querySelectorAll('[data-mode],#db-new'))button.disabled=busy;composer.sync({step:run?.step??0,mode:mode,busy,enabled:!busy&&configured&&(run?.step??0)<3,lastText:run?.submitted_prompts?.at(-1)?.prompt,label:document.querySelector('[data-step]:not(:disabled)')?.textContent});}
 function decision(call){if(call.received)return call.rpc?.result&&!call.rpc.result.isError?'Tool executed':'MCP error';return call.decision==='deny'?'Denied by Gateway':'Not verified';}
 function render(){
  $('#db-mode-evidence').textContent=mode==='agent'?'Live Agent proposes tools. Final status verification is scripted.':'Guided tool selection ≠ autonomous agent reasoning.';
@@ -16,6 +18,7 @@ function render(){
    evidence.textContent=call.received?`${call.committed?'Sandbox volume deleted.':'MCP server received the call.'}${call.request_id?' Request '+call.request_id:''}`:raw||'No verified MCP delivery.';
    li.append(name,status,evidence);list.append(li);
   }
+  const submitted=$('#db-submitted-'+side),lastText=run?.submitted_prompts?.findLast(x=>x.id===calls.at(-1)?.client_call_id)?.prompt;submitted.hidden=!lastText;submitted.querySelector('pre').textContent=lastText||'';
   const deletion=calls.find(x=>x.tool==='delete_volume');
   $('#outcome-'+side).textContent=deletion?(deletion.committed?'The destructive tool changed this sandbox to Offline.':deletion.decision==='deny'?'Gateway denied delete_volume. The synthetic database was not deleted.':'Deletion was not confirmed. Check the request evidence.'):(calls.length?'The status read is recorded below.':'Run step 1 to inspect this route.');
  }
@@ -30,7 +33,7 @@ for(const button of document.querySelectorAll('[data-mode]'))button.addEventList
 $('#db-new').addEventListener('click',()=>{run=null;$('#db-notice').textContent='New comparison. Each side gets a fresh synthetic database.';render();});
 for(const button of document.querySelectorAll('[data-step]'))button.addEventListener('click',async()=>{
  if(busy)return;busy=true;controls();$('#db-notice').textContent='In progress · '+button.textContent.replace(/^\d\. /,'')+'…';
- try{if(!run)run=await api('/runs',{mode});run=await api('/runs/'+run.id+'/step',{step:button.dataset.step});$('#db-notice').textContent=run.notice||'Step completed. Review the observed results below.';}
+ try{if(!run)run=await api('/runs',{mode});run=await api('/runs/'+run.id+'/step',{step:button.dataset.step,prompt:composer.value(button.dataset.step)});$('#db-notice').textContent=run.notice||'Step completed. Review the observed results below.';}
  catch(error){$('#db-notice').textContent=error.message;if(run){try{run=await api('/runs/'+run.id);}catch{}}}
  finally{busy=false;render();}
 });

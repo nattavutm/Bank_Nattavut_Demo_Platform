@@ -1,3 +1,5 @@
+import {initPrompts,promptText,savePrompt,getPrompt,listPrompts,clearExpiredPrompts} from './demo-prompts.js';
+import {promptDefaults,modelInstructions} from '../../public/gateway/prompt-defaults.js';
 import { Fault, json, readJson, sameOrigin, safeEqual } from './runtime/util.js';
 import { MODEL } from '../constants.js';
 
@@ -15,7 +17,7 @@ async function init(db){
    'CREATE TABLE IF NOT EXISTS fallback_demo_receipts(call TEXT NOT NULL,provider TEXT NOT NULL,attempts INTEGER NOT NULL,state TEXT NOT NULL,http INTEGER,reply TEXT,received INTEGER NOT NULL,completed INTEGER,PRIMARY KEY(call,provider))'
   ])await db.prepare(sql).run();
  })().catch(e=>{initialized.delete(db);throw e;}));
- await initialized.get(db);
+ await initialized.get(db);await initPrompts(db);
 }
 async function hash(value){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');}
 async function owner(request){const cookie=request.headers.get('Cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith('__Host-trendai_session='));if(!cookie)throw new Fault(401,'Sign in to run this demo.');return hash(cookie);}
@@ -28,6 +30,8 @@ async function receive(env,db,provider,args){
  const now=Date.now();
  const call=await db.prepare("SELECT c.id,c.side,c.phase FROM fallback_demo_calls c JOIN fallback_demo_runs r ON r.id=c.run WHERE c.id=? AND c.run=? AND c.proof=? AND c.status='running' AND r.expires>?").bind(args.call,args.run,args.proof,now).first();
  if(!call||call.side==='direct'&&provider!=='primary')throw new Fault(409,'This call is expired or not delegated to this endpoint.');
+ const savedText=await getPrompt(db,'fallback',args.run)??FALLBACK_PROMPT;
+ if(args.prompt!==undefined&&args.prompt!==savedText)throw new Fault(400,'The prompt differs from this comparison.');
  // A receipt is claimed atomically only while this exact run/call is active.
  // Retries are counted but may not invoke Workers AI a second time.
  const receipt=await db.prepare(`INSERT INTO fallback_demo_receipts(call,provider,attempts,state,received)
@@ -46,7 +50,7 @@ async function receive(env,db,provider,args){
  }
  let timer;
  try{
-  const result=await Promise.race([env.AI.run(MODEL,{messages:[{role:'system',content:'Write one short English mission status sentence using the supplied fictional information. Do not add facts or claim a real-world action.'},{role:'user',content:FALLBACK_PROMPT}],max_tokens:180,temperature:0.2}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout')),25000);})]);
+  const result=await Promise.race([env.AI.run(MODEL,{messages:[{role:'system',content:modelInstructions.fallback},{role:'user',content:savedText}],max_tokens:180,temperature:0.2}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout')),25000);})]);
   const choice=result?.choices?.length===1?result.choices[0]:null;
   const reply=typeof result?.response==='string'?result.response:choice?.finish_reason==='stop'?choice?.message?.content:null;
   if(typeof reply!=='string'||!reply.trim()||reply.length>6000)throw new Error('Invalid model result');
@@ -66,12 +70,12 @@ async function modelApi(request,env,db,path){
   return json({object:'list',data:[{id:'r5r5-'+provider+'-model',object:'model',owned_by:'r5r5-controlled-demo'}]});
  }
  if(request.method!=='POST')throw new Fault(405,'Use POST.');
- const body=await readJson(request,8000),messages=body?.messages;
- if(![FALLBACK_MODEL,'r5r5-'+provider,'r5r5-'+provider+'-model'].includes(body?.model)||body.stream===true||!Array.isArray(messages)||messages.length!==2||messages[0]?.role!=='system'||messages[1]?.role!=='user'||messages[1].content!==FALLBACK_PROMPT)throw new Fault(400,'Invalid bounded demo request.');
+ const body=await readJson(request,20000),messages=body?.messages;
+ if(![FALLBACK_MODEL,'r5r5-'+provider,'r5r5-'+provider+'-model'].includes(body?.model)||body.stream===true||!Array.isArray(messages)||messages.length!==2||messages[0]?.role!=='system'||messages[1]?.role!=='user'||typeof messages[1].content!=='string'||!messages[1].content.trim()||messages[1].content.length>4000)throw new Fault(400,'Invalid bounded demo request.');
  const context=/^Fallback run: ([a-f0-9-]{36})\nCall: ([a-f0-9-]{36})\nContext: ([a-f0-9-]{36})$/.exec(messages[0].content);
  if(!context)throw new Fault(401,'Invalid delegated context.');
  await init(db);
- return receive(env,db,provider,{run:context[1],call:context[2],proof:context[3]});
+ return receive(env,db,provider,{run:context[1],call:context[2],proof:context[3],prompt:messages[1].content});
 }
 export function fallbackObservation(call,receipts){
  const primary=receipts.find(x=>x.provider==='primary'),backup=receipts.find(x=>x.provider==='backup');
@@ -84,15 +88,16 @@ export function fallbackObservation(call,receipts){
 async function snapshot(db,run){
  const calls=(await db.prepare('SELECT id AS client_call_id,side,phase,status,http,reply,request_id,created FROM fallback_demo_calls WHERE run=? ORDER BY created,id').bind(run.id).all()).results;
  const receipts=(await db.prepare('SELECT f.call,f.provider,f.attempts,f.state,f.http,f.reply,f.received,f.completed FROM fallback_demo_receipts f JOIN fallback_demo_calls c ON c.id=f.call WHERE c.run=? ORDER BY f.received,f.provider').bind(run.id).all()).results;
- return {id:run.id,step:run.step,notice:run.notice,requested_model:FALLBACK_MODEL,prompt:FALLBACK_PROMPT,gateway_mode:'live',model_mode:'live',outage_mode:'controlled',calls:calls.map(c=>{const observed=receipts.filter(x=>x.call===c.client_call_id);return {...c,receipts:observed,...fallbackObservation(c,observed)};})};
+ return {id:run.id,step:run.step,notice:run.notice,requested_model:FALLBACK_MODEL,prompt:await getPrompt(db,'fallback',run.id)??FALLBACK_PROMPT,gateway_mode:'live',model_mode:'live',outage_mode:'controlled',calls:calls.map(c=>{const observed=receipts.filter(x=>x.call===c.client_call_id);return {...c,receipts:observed,...fallbackObservation(c,observed)};})};
 }
 async function getRun(db,id,who){if(!UUID.test(id))throw new Fault(404,'Run not found.');const run=await db.prepare('SELECT * FROM fallback_demo_runs WHERE id=? AND owner=? AND expires>?').bind(id,who,Date.now()).first();if(!run)throw new Fault(404,'Run expired or is unavailable.');return run;}
 async function dispatch(env,db,run,side,phase){
  const id=crypto.randomUUID(),proof=crypto.randomUUID();
  await db.prepare("INSERT INTO fallback_demo_calls(id,run,side,phase,proof,status,created) VALUES(?,?,?,?,?,'running',?)").bind(id,run.id,side,phase,proof,Date.now()).run();
+ const text=await getPrompt(db,'fallback',run.id)??FALLBACK_PROMPT;
  let http=0,reply=null,requestId=null;
  try{
-  const response=side==='direct'?await receive(env,db,'primary',{run:run.id,call:id,proof}):await env.AI_GATEWAY.fetch(GATEWAY,{method:'POST',headers:{Authorization:'Bearer '+env.GATEWAY_DEMO_VIRTUAL_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:FALLBACK_MODEL,stream:false,messages:[{role:'system',content:`Fallback run: ${run.id}\nCall: ${id}\nContext: ${proof}`},{role:'user',content:FALLBACK_PROMPT}]}),redirect:'manual',signal:AbortSignal.timeout(60000)});
+  const response=side==='direct'?await receive(env,db,'primary',{run:run.id,call:id,proof}):await env.AI_GATEWAY.fetch(GATEWAY,{method:'POST',headers:{Authorization:'Bearer '+env.GATEWAY_DEMO_VIRTUAL_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:FALLBACK_MODEL,stream:false,messages:[{role:'system',content:`Fallback run: ${run.id}\nCall: ${id}\nContext: ${proof}`},{role:'user',content:text}]}),redirect:'manual',signal:AbortSignal.timeout(60000)});
   http=response.status;requestId=side==='gateway'?response.headers.get('x-request-id'):null;
   const body=await response.json().catch(()=>null),content=body?.choices?.[0]?.message?.content;
   if(response.ok&&typeof content==='string'&&content.length<=6000)reply=content;
@@ -107,14 +112,15 @@ export async function fallbackApi(request,env,service=false){
   const who=await owner(request);await init(db);
   if(path===BASE+'/config'&&request.method==='GET')return json({configured:Boolean(env.AI_GATEWAY&&env.GATEWAY_DEMO_VIRTUAL_KEY),requested_model:FALLBACK_MODEL,prompt:FALLBACK_PROMPT});
   if(path===BASE+'/runs'&&request.method==='POST'){
-   sameOrigin(request);const body=await readJson(request,256);if(!body||Object.keys(body).length)throw new Fault(400,'Run settings are server-owned.');
+   sameOrigin(request);await clearExpiredPrompts(db,'fallback');const body=await readJson(request,20000);if(!body||Object.keys(body).some(k=>k!=='prompt'))throw new Fault(400,'Run settings are server-owned.');
+   const text=promptText(body.prompt,FALLBACK_PROMPT);
    const id=crypto.randomUUID(),now=Date.now();
    await db.batch([
     db.prepare('DELETE FROM fallback_demo_receipts WHERE call IN(SELECT c.id FROM fallback_demo_calls c JOIN fallback_demo_runs r ON r.id=c.run WHERE r.expires<=?)').bind(now),
     db.prepare('DELETE FROM fallback_demo_calls WHERE run IN(SELECT id FROM fallback_demo_runs WHERE expires<=?)').bind(now),
     db.prepare('DELETE FROM fallback_demo_runs WHERE expires<=?').bind(now),
     db.prepare('INSERT INTO fallback_demo_runs(id,owner,created,expires) VALUES(?,?,?,?)').bind(id,who,now,now+1800000)
-   ]);return json(await snapshot(db,{id,step:0,notice:null}),201);
+   ]);await savePrompt(db,'fallback',id,'request',id,text,'model');return json(await snapshot(db,{id,step:0,notice:null}),201);
   }
   const match=new RegExp('^'+BASE+'/runs/([a-f0-9-]+)(/step)?$').exec(path);if(!match)throw new Fault(404,'Unknown demo route.');
   const run=await getRun(db,match[1],who);

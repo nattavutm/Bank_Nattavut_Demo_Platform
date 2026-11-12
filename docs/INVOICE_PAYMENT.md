@@ -42,3 +42,11 @@ On 2026-11-12, the first live agent test proposed `read_invoice`. Neither side a
 - Unit tests cover ownership/origin/schema/order, unavailable model and connectivity, actual model proposal handling, strict denial classification, receiver authentication, idempotency/replay, and a Gateway that permits payment (both ledgers must then show payment rather than fabricated protection).
 
 Use existing free-tier quotas and demo entitlements. No subscription upgrade is performed. Keep Preview: the broader five-case readiness criterion is not yet met.
+
+## Editable text and explanatory diagram
+
+Each step has an editable composer (1–4,000 characters), red send button and Ctrl/Cmd+Enter. Review sends the edited text to Workers AI as the user message with the displayed server-owned summary instruction. Payment in Live Agent mode uses the edited text as its actual user message for tool proposal. Guided prescribes the tool, not model reasoning. Both MCP calls include the same edited text as the optional `scenario_text` argument; it is scenario context only, not authority to change invoice, amount, identity or destination. The receiving MCP service checks that text against the server-recorded call before accepting its proof.
+
+Submitted model attempts and MCP text are stored in `gateway_demo_prompts` in the existing D1 binding; evidence and per-route “Last submitted text” show recorded submissions rather than the current editor. Expired prompt rows are removed when a new comparison of that kind is created. Use synthetic data. No model/Gateway credential is editable. Legacy calls without a recorded scenario text remain compatible.
+
+The separate Without/With diagram illustrates read versus payment-denial paths only. Animation and example selection never execute a tool, debit a ledger or manufacture live results. A permanent Illustration label distinguishes it from live results. The tool's optional input schema must be refreshed in Gateway if its cached discovery schema rejects the newly included `scenario_text`; permissions do not change.
