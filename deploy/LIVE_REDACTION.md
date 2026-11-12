@@ -1,31 +1,34 @@
-# Live Workers AI comparison — sensitive-data case only
+# Target architecture — Cloudflare app, EKS Gateway only
 
-Both buttons create fresh, session-owned jobs; neither renders a recorded baseline.
-Both paths invoke `@cf/meta/llama-3.2-3b-instruct` through the existing Cloudflare AI binding.
+The target supersedes the temporary EKS runner/adapter arrangement described in Git history. Migration is not complete until the production evidence and retired workload checks below pass.
 
-- Direct: browser → authenticated Worker job → EKS runner's local adapter → signed Worker inference → Workers AI.
-- Protected: browser → authenticated Worker job → EKS runner → TrendAI AI Gateway → the same EKS adapter → signed Worker inference → Workers AI → Gateway response inspection → runner.
+- Without: authenticated browser → Cloudflare Worker → Workers AI.
+- With: authenticated browser → Cloudflare Worker → narrowly scoped Workers VPC Service → Cloudflare Tunnel connector → TrendAI AI Gateway → HTTPS Cloudflare model endpoint → Workers AI → Gateway response inspection → Cloudflare Worker → browser.
+- EKS runs the AI Gateway and its required Redis/network connector only. No application, fixture service, model adapter, job runner or evidence store remains on EKS after migration.
+- UI, login, job orchestration, fixed synthetic fixtures, input receipts and model inference run on Cloudflare. D1 stores isolated session-owned jobs and receipts.
 
-The EKS component is an OpenAI-compatible adapter, not the LLM. `r5r5-summary` remains the Gateway alias. Its existing upstream protocol model ID `synthetic-summary` is retained only to avoid replacing resource IDs/policy targets. It no longer returns canned text after the dedicated provider's URL is switched to the adapter. The actual inferred model is recorded in each result.
+## Private connectivity and secrets
 
-## Auth and evidence
+`AI_GATEWAY` is a Workers VPC Service binding restricted to the Gateway Service at HTTP port 8080. There is no public Gateway hostname, ingress or load balancer. `deploy/gateway-private-connector.json` adds only a transport connector in the Gateway namespace; its network policy permits the Gateway port, DNS and Cloudflare Tunnel transport, and does not permit the MCP or management port. The connector token is held in a Kubernetes Secret. The existing dedicated demo Virtual Key is moved to an encrypted Worker Secret named `GATEWAY_DEMO_VIRTUAL_KEY`; no key enters browser code or Git.
 
-The adapter keeps the existing runner signing key in the same process. No key is sent to the browser or copied to another service. The runner no longer needs the fixture control key; it uses the existing demo upstream key for adapter authentication. The new Service is ClusterIP only, with ingress restricted to the Gateway pods on 4892.
+The Cloudflare model endpoint accepts only an active server-created job ID plus a random, one-use delegated context. This context is created inside the authenticated Worker, sent to Gateway in the server-owned system message, never returned to the browser, tied to the fixed fixture/redaction and current run, and expires within 3 minutes. A persistent unique inference receipt prevents replay. The Gateway sees the existing app identity; this is not individual employee authentication.
 
-The Worker independently verifies the signed active job/claim, accepts only the fixed synthetic fixture or validated redaction, and atomically creates one inference receipt per job. A replay cannot spend another inference. Browser sessions cannot read other sessions' jobs. Completion and input receipts are recorded by the Worker, not inferred from a displayed animation. Errors do not substitute canned answers. A missing receipt alone never establishes a Gateway block. The returned model answer is the answer received through the selected route; raw model text withheld by Gateway is not exposed via polling.
+## Inference and evidence
 
-Jobs/receipts expire after 3 minutes and are cleaned up when a new job is created. Existing login/session lifetime remains unchanged. One active comparison request is allowed at a time. Workers AI quota still applies.
+Both sides use `@cf/meta/llama-3.2-3b-instruct`. The Gateway alias remains `r5r5-summary`. The upstream protocol ID `synthetic-summary` is a legacy alias retained to preserve policy/resource IDs; the registered provider now forwards to Workers AI rather than returning canned replies. The result records the actual inference model.
 
-## Coordinated rollout
+The Worker records the validated original or redacted prompt immediately before invoking Workers AI. It records completed/failed inference separately from the response returned through Gateway. Raw model replies blocked by Gateway are not returned through the comparison API. A missing receipt is unknown, not proof of blocking. No failure substitutes a fixture answer. One request is active at a time. Workers AI quota applies.
 
-1. Deploy `src/gateway/live-redaction.js` and its worker dispatch before starting the new runner.
-2. Update `r5r5-mask-runner-source` ConfigMap with `live.mjs` from `scripts/run-live-redaction.mjs`, `observation.mjs` from the shared public parser, and preserve `run.mjs` as a rollback source.
-3. Apply `live-redaction-adapter.json`, then strategically patch `r5r5-mask-runner` using `live-redaction-runner-patch.json`. Existing secret references/mounts and security context are preserved. No public ingress/load balancer is created.
-4. Change only the existing `r5r5-demo-summary` provider base URL to `http://r5r5-mask-runner.r5r5-demo.svc.cluster.local:4892`. Keep OpenAI type, existing environment-variable auth, model ID, alias and policy targets unchanged.
-5. Deploy the two-button UI, run Direct and Gateway separately, and verify real generated answers plus the original/masked Worker receipts. Check the Gateway request ID in Vision One Events.
+## Cutover
 
-The old synthetic-model and MCP service remain available for other demo cases. Do not modify shared policies or unrelated Vision One solutions.
+1. Create the private Tunnel/VPC Service, store the connector token and existing dedicated demo Virtual Key in their target secrets, and deploy the connector.
+2. Add `AI_GATEWAY` to Wrangler bindings and set `REDACTION_EXECUTION=cloudflare` only when connectivity is ready. Change only the summary provider base URL to `https://demo.nattavut.online/api/gateway/redaction/live/model`; retain its model/alias/guardrail assignments.
+3. The Worker owns execution; EKS runner routes return 410. Run both buttons and match Gateway evidence with the received Worker prompt and real model reply.
+4. Move the old synthetic MCP/primary/backup test endpoint contracts to Cloudflare before disabling their EKS deployment. Update only dedicated Gateway provider/MCP resource URLs as needed. Unimplemented scenarios stay Preview/Not tested.
+5. Scale `r5r5-mask-runner` and `r5r5-upstreams` to zero. Retain their manifests for rollback; do not delete run evidence, credentials or persistent volumes as part of this change. Verify the active EKS workloads are only Gateway dependencies and the connector.
 
-## Verification
+## Checks
 
-`npm test` includes actual SQLite job/receipt persistence, Ed25519 authentication, session isolation, mode validation, one-shot inference, fake success rejection, input restrictions and provider failure behavior. The AI binding is a test double in these tests; production evidence must be checked separately before claiming live deployment complete.
+The test suite exercises real SQLite persistence and a test AI binding: session ownership, fixed input restrictions, direct vs protected paths, unexposed one-use context, replay rejection, no live success without an inference receipt, no fallback on error, and no public arbitrary-target API. Production verification must separately demonstrate both paths and confirm EKS workload retirement.
+
+References: https://developers.cloudflare.com/workers-vpc/configuration/vpc-services/ and https://developers.cloudflare.com/workers-vpc/configuration/tunnel/ (Workers VPC is currently beta).

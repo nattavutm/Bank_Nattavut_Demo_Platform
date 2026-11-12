@@ -106,11 +106,51 @@ async function finish(db, body, now) {
   return json({ ok: true });
 }
 
+async function cloudflareExecute(env, db, id, mode, claim) {
+  let result = null;
+  try {
+    let response;
+    if (mode === "direct") {
+      response = await infer(null, env, db, { id, claim, receivedText: fixtureBody }, Date.now());
+    } else {
+      response = await env.AI_GATEWAY.fetch("http://trendai-gateway-gateway.trendai-gateway.svc.cluster.local:8080/v1/chat/completions", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.GATEWAY_DEMO_VIRTUAL_KEY },
+        body: JSON.stringify({ model: "r5r5-summary", stream: false, messages: [
+          { role: "system", content: "Demo run: " + id + "\nContext: " + claim },
+          { role: "user", content: fixtureBody },
+        ] }), redirect: "error", signal: AbortSignal.timeout(60000),
+      });
+    }
+    const payload = await response.json().catch(() => null);
+    result = { responseStatus: response.status, gatewayRequestId: mode === "gateway" ? response.headers.get("x-request-id") : null,
+      gatewayErrorCode: mode === "gateway" && response.status >= 400 && payload?.error?.code === "policy_violation" ? "policy_violation" : null,
+      reply: typeof payload?.choices?.[0]?.message?.content === "string" ? payload.choices[0].message.content : null };
+  } catch { /* Do not bypass the Gateway or substitute a fixture answer. */ }
+  await finish(db, { id, claim, result }, Date.now());
+}
+
+async function modelApi(request, env, db, now) {
+  if (request.method !== "POST") throw new Fault(405, "Use POST.");
+  const body = await readJson(request, 8000), messages = body?.messages;
+  if (!["r5r5-summary", "synthetic-summary"].includes(body?.model) || body.stream === true ||
+      !Array.isArray(messages) || messages.length !== 2 || messages[0]?.role !== "system" || messages[1]?.role !== "user")
+    throw new Fault(400, "Invalid bounded inference request.");
+  const match = /^Demo run: ([0-9a-f-]{36})\nContext: ([0-9a-f-]{36})$/.exec(messages[0].content);
+  if (!match || !uuid.test(match[1]) || !uuid.test(match[2])) throw new Fault(401, "Invalid inference context.");
+  await initialize(db);
+  const job = await activeJob(db, { id: match[1], claim: match[2] }, now);
+  if (job.mode !== "gateway") throw new Fault(403, "This context is not delegated to Gateway.");
+  return infer(request, env, db, { id: job.id, claim: match[2], receivedText: messages[1].content }, now);
+}
+
 export async function liveRedactionApi(request, env, service = false) {
   const path = new URL(request.url).pathname, now = Date.now(), db = env.LR_DB_PROTECTED;
   try {
     if (!db || !env.REDACTION_RUNNER_PUBLIC_KEY) throw new Fault(503, "The live demo runner is not configured.");
+    const cloudflare = env.REDACTION_EXECUTION === "cloudflare";
+    if (cloudflare && path === base + "/model/v1/chat/completions") return await modelApi(request, env, db, now);
     if (service) {
+      if (cloudflare) throw new Fault(410, "The EKS runner has been retired.");
       if (request.method !== "POST") throw new Fault(405, "Use POST.");
       const body = await readJson(request, 16000);
       if (!await verifyRunner(request, env, path, body)) throw new Fault(401, "Invalid runner signature.");
@@ -133,6 +173,9 @@ export async function liveRedactionApi(request, env, service = false) {
       const body = await readJson(request, 128);
       if (!body || !modes.has(body.mode) || Object.keys(body).some(k => k !== "mode"))
         throw new Fault(400, "Choose direct or gateway. The test input and destination are fixed.");
+      if (cloudflare && body.mode === "gateway" && (!env.AI_GATEWAY || !env.GATEWAY_DEMO_VIRTUAL_KEY))
+        throw new Fault(503, "The private Gateway connection is not configured.");
+      if (cloudflare && !env.AI) throw new Fault(503, "Workers AI is not configured.");
       await initialize(db);
       const id = crypto.randomUUID();
       const [,, inserted] = await db.batch([
@@ -143,7 +186,12 @@ export async function liveRedactionApi(request, env, service = false) {
           .bind(id, session, body.mode, now, now + 180000),
       ]);
       if (!inserted.meta.changes) throw new Fault(429, "A demo request is already in progress.");
-      return json({ id, mode: body.mode, status: "queued" }, 202);
+      if (cloudflare) {
+        const claim = crypto.randomUUID();
+        await db.prepare("UPDATE gateway_live_jobs SET status='running', claim=? WHERE id=? AND status='queued'").bind(claim, id).run();
+        await cloudflareExecute(env, db, id, body.mode, claim);
+      }
+      return json({ id, mode: body.mode, status: cloudflare ? "processed" : "queued" }, 202);
     }
     const id = path.slice(base.length + 1);
     if (request.method !== "GET" || !uuid.test(id)) throw new Fault(404, "Unknown demo route.");

@@ -100,3 +100,56 @@ test("Workers AI failure never substitutes a canned summary or labels the infere
     assert.equal(observed.result.reply, null);
   } finally { t.sqlite.close(); }
 });
+
+test("Cloudflare owns orchestration and inference; Gateway receives only a fixed request and an unexposed one-use context", async () => {
+  const t = setup();
+  try {
+    t.env.REDACTION_EXECUTION = "cloudflare";
+    t.env.GATEWAY_DEMO_VIRTUAL_KEY = "test-only-virtual-key";
+    const gatewayCalls = [];
+    t.env.AI_GATEWAY = { async fetch(url, options) {
+      gatewayCalls.push({ url, options });
+      const body = JSON.parse(options.body);
+      assert.equal(options.headers.Authorization, "Bearer test-only-virtual-key");
+      assert.equal(url, "http://trendai-gateway-gateway.trendai-gateway.svc.cluster.local:8080/v1/chat/completions");
+      body.model = "synthetic-summary";
+      body.messages[1].content = fixtureFields.reduce((s, f) => s.replace(f.value, "[REDACTED]"), body.messages[1].content);
+      const modelResponse = await liveRedactionApi(new Request("https://demo.test/api/gateway/redaction/live/model/v1/chat/completions", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      }), t.env, true);
+      assert.equal(modelResponse.status, 200);
+      const headers = new Headers(modelResponse.headers); headers.set("x-request-id", randomUUID());
+      return new Response(modelResponse.body, { status: 200, headers });
+    } };
+    for (const mode of ["direct", "gateway"]) {
+      const response = await t.browser("", "POST", { mode }); assert.equal(response.status, 202);
+      const created = await response.json(); assert.equal(created.status, "processed");
+      const job = await (await t.browser("/" + created.id)).json();
+      assert.equal(job.status, "done"); assert.equal(job.result.modelMode, "live");
+      assert.deepEqual(job.result.fields, Array(4).fill(mode === "direct" ? "unmasked" : "masked"));
+      assert.ok(!JSON.stringify(job).includes("Context:"));
+      assert.ok(!JSON.stringify(job).includes("test-only-virtual-key"));
+    }
+    assert.equal(t.calls.length, 2); assert.equal(gatewayCalls.length, 1);
+    assert.equal((await t.service("/runner/claim", { claim: randomUUID() })).status, 410);
+    const replay = await liveRedactionApi(new Request("https://demo.test/api/gateway/redaction/live/model/v1/chat/completions", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: gatewayCalls[0].options.body,
+    }), t.env, true);
+    assert.equal(replay.status, 409);
+    assert.equal(t.calls.length, 2);
+  } finally { t.sqlite.close(); }
+});
+
+test("Cloudflare model endpoint refuses missing or guessed context and missing private connectivity does not bypass Gateway", async () => {
+  const t = setup();
+  try {
+    t.env.REDACTION_EXECUTION = "cloudflare";
+    assert.equal((await t.browser("", "POST", { mode: "gateway" })).status, 503);
+    const call = messages => liveRedactionApi(new Request("https://demo.test/api/gateway/redaction/live/model/v1/chat/completions", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "synthetic-summary", messages }),
+    }), t.env, true);
+    assert.equal((await call([{ role: "system", content: "No context" }, { role: "user", content: fixtureBody }])).status, 401);
+    assert.equal((await call([{ role: "system", content: "Demo run: " + randomUUID() + "\nContext: " + randomUUID() }, { role: "user", content: fixtureBody }])).status, 409);
+    assert.equal(t.calls.length, 0);
+  } finally { t.sqlite.close(); }
+});

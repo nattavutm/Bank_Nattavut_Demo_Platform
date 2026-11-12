@@ -37,8 +37,8 @@ function renderDebug() {
   const run = runs[selected], result = run?.result, unavailable = "Not available";
   document.querySelector("#debug-state").textContent = (selected === "direct" ? "Without Gateway" : "With Gateway") + " · " + (run?.status || "Not started");
   document.querySelector("#debug-route").textContent = selected === "direct"
-    ? "Browser → Worker job → EKS adapter → Cloudflare Workers AI"
-    : "Browser → Worker job → EKS runner → AI Gateway → EKS adapter → Cloudflare Workers AI";
+    ? "Browser → Cloudflare Worker → Workers AI"
+    : "Browser → Cloudflare Worker → AI Gateway → Cloudflare Worker → Workers AI";
   rows("#debug-run", [["Job ID", run?.id || unavailable], ["State", run?.status || "Not started"],
     ["Started", run?.started || unavailable], ["Elapsed", run?.elapsedMs ? (run.elapsedMs / 1000).toFixed(1) + " s" : unavailable]]);
   rows("#debug-gateway", [["Route", selected === "direct" ? "Direct · Gateway bypassed" : "Via AI Gateway"],
@@ -104,10 +104,10 @@ async function start(mode) {
   document.querySelector("#redaction-input").open = true;
   const run = runs[mode] = { mode, status: "Submitting", id: null, started: new Date().toISOString(), elapsedMs: null, result: null, timeline: [] };
   const trace = message => { run.timeline.push({ elapsedMs: Date.now() - Date.parse(run.started), message }); renderDebug(); };
-  show(mode, "Queued · Waiting for the EKS runner…"); trace("Submitted a fresh fixed-fixture inference job.");
+  show(mode, "In progress · Sending the live request…"); trace("Submitted a fresh fixed-fixture inference job.");
   try {
     const queued = await responseJson(await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode }) }));
-    run.id = queued.id; run.status = "Queued"; trace("Job queued for " + mode + " delivery.");
+    run.id = queued.id; run.status = "Processing"; trace("Job accepted for " + mode + " delivery.");
     const until = Date.now() + 160000;
     while (Date.now() < until) {
       await new Promise(resolve => setTimeout(resolve, 2200));
@@ -119,7 +119,7 @@ async function start(mode) {
         trace("Received transport result and Worker-recorded model evidence."); return;
       }
       if (job.status === "running" && run.status !== "Running") {
-        run.status = "Running"; trace("EKS runner claimed this job.");
+        run.status = "Running"; trace("Request processing started.");
         show(mode, mode === "direct" ? "In progress · Sending directly to Workers AI…" : "In progress · Sending through AI Gateway to Workers AI…");
       }
     }

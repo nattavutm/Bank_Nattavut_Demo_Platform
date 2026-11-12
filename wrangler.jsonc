@@ -3,7 +3,8 @@
   "name": "bank-nattavut-demo-platform",
   "main": "src/worker.js",
   "vars": {
-    "REDACTION_RUNNER_PUBLIC_KEY": "MCowBQYDK2VwAyEADGDIuHWd/Y+2qC6xdAxb6yKWXZubnXEu+Q1cM6rByxU="
+    "REDACTION_RUNNER_PUBLIC_KEY": "MCowBQYDK2VwAyEADGDIuHWd/Y+2qC6xdAxb6yKWXZubnXEu+Q1cM6rByxU=",
+    "REDACTION_EXECUTION": "cloudflare"
   },
   "compatibility_date": "2026-10-29",
   "assets": {
@@ -39,6 +40,13 @@
       "binding": "LR_DB_PROTECTED",
       "database_name": "r5r5-gateway-protected-preview",
       "database_id": "3cd06fde-7b99-4bee-ae6b-0870172df253"
+    }
+  ],
+  "vpc_services": [
+    {
+      "binding": "AI_GATEWAY",
+      "service_id": "01a1cddf-0fae-70f0-8ae4-9b241c187905",
+      "remote": true
     }
   ]
 }
