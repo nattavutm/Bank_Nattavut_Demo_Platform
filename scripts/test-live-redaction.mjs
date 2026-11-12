@@ -109,6 +109,7 @@ test("Cloudflare owns orchestration and inference; Gateway receives only a fixed
     const gatewayCalls = [];
     t.env.AI_GATEWAY = { async fetch(url, options) {
       gatewayCalls.push({ url, options });
+      assert.equal(options.redirect, "manual", "private fetch must not follow credential-bearing redirects");
       const body = JSON.parse(options.body);
       assert.equal(options.headers.Authorization, "Bearer test-only-virtual-key");
       assert.equal(url, "http://trendai-gateway-gateway.trendai-gateway.svc.cluster.local:8080/v1/chat/completions");

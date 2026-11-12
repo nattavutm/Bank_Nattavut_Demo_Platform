@@ -118,7 +118,7 @@ async function cloudflareExecute(env, db, id, mode, claim) {
         body: JSON.stringify({ model: "r5r5-summary", stream: false, messages: [
           { role: "system", content: "Demo run: " + id + "\nContext: " + claim },
           { role: "user", content: fixtureBody },
-        ] }), redirect: "error", signal: AbortSignal.timeout(60000),
+        ] }), redirect: "manual", signal: AbortSignal.timeout(60000),
       });
     }
     const payload = await response.json().catch(() => null);
