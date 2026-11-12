@@ -26,3 +26,14 @@ test('fallback illustration tries Primary before Backup; direct and normal route
  }
  assert.throws(()=>flowPlan('missing','with','attack'));
 });
+test('email and model access illustrations stop denied requests before inference and reverse allowed routes',()=>{
+ for(const kind of ['email','models']){
+  assert.deepEqual(flowPlan(kind,'with','attack'),[{route:'source-gateway',reverse:false},{effect:'deny'},{route:'source-gateway',reverse:true},{effect:'done'}]);
+  for(const mode of ['with','without'])for(const scenario of ['normal',...(kind==='models'?['authorized']:[])]){
+   const steps=flowPlan(kind,mode,scenario),moves=steps.filter(x=>x.route);
+   assert.deepEqual(moves.filter(x=>x.reverse).map(x=>x.route),moves.filter(x=>!x.reverse).map(x=>x.route).toReversed());
+   assert.ok(steps.some(x=>x.effect==='answer'));assert.equal(steps.some(x=>x.effect==='deny'),false);
+  }
+ }
+ assert.throws(()=>flowPlan('email','with','authorized'));
+});

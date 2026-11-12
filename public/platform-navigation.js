@@ -20,6 +20,8 @@
         {name: 'Check Status, Prevent Database Deletion', route:'#gateway/database-deletion'},
         {name: 'Mask Sensitive Data Before Inference', route:'#gateway/card-redaction'},
         {name: 'Primary Model Fails, App Keeps Responding', route:'#gateway/model-fallback'},
+        {name: 'Summarize Emails. Block Hidden Instructions.', route:'#gateway/email-injection'},
+        {name: 'Approved Apps. Approved Models.', route:'#gateway/model-access'},
       ],
     },
     { id: "insights", name: "AI Risk Insights", direct: true, tbd: true },

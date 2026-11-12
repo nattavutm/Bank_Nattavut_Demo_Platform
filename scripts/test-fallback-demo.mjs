@@ -82,6 +82,6 @@ test('an edited comparison prompt reaches both models unchanged and cannot be sw
  const gateway=t.env.AI_GATEWAY.fetch;t.env.AI_GATEWAY.fetch=async(url,opts)=>{const body=JSON.parse(opts.body);const edited={...body,messages:[body.messages[0],{role:'user',content:'different prompt'}]};assert.equal((await t.service('primary',edited)).status,400);return gateway(url,opts);};
  const run=await (await t.browser('/runs',{prompt})).json();assert.equal(run.prompt,prompt);
  await t.browser('/runs/'+run.id+'/step',{step:'normal'});const result=await (await t.browser('/runs/'+run.id+'/step',{step:'outage'})).json();
- assert.deepEqual(seen,[prompt,prompt,prompt]);assert.ok(t.traffic.every(x=>x.messages[1].content===prompt));assert.equal(result.prompt,prompt);assert.equal(result.calls.at(-1).fallback_observed,true);
+ assert.deepEqual(seen,[prompt,prompt,prompt]);assert.ok(t.traffic.every(x=>x.messages[1].content===prompt));assert.equal(result.prompt,prompt);assert.equal(result.calls.find(c=>c.side==='gateway'&&c.phase==='outage').fallback_observed,true);
  assert.equal((await t.browser('/runs',{prompt:''})).status,400);assert.equal((await t.browser('/runs',{prompt:'a'.repeat(4001)})).status,400);
 }finally{t.sqlite.close();}});
