@@ -17,19 +17,22 @@
     <main id="lr-app" class="lr-app lr-main redaction">
       <p class="redaction-kicker">AI Gateway / Guardrails</p>
       <h1>Mask Sensitive Data Before Inference</h1>
-      <p>Han Solo requests a THB 1,250 refund for the Millennium Falcon parking fee. The synthetic request includes a payment card, Leia’s email, a dispatch phone number, and a hangar API credential.</p>
+      <p>See what the model receives, and whether it can still summarize the refund.</p>
 
       <div id="mask-explainer"></div>
 
-      <details id="redaction-input" class="redaction-panel">
-        <summary>Synthetic request</summary>
-        <dl>
-          <dt>Payment card</dt><dd><code>4111 1111 1111 1111</code></dd>
-          <dt>Leia’s contact email</dt><dd><code>leia.organa@example.com</code></dd>
-          <dt>Rebel dispatch phone</dt><dd><code>+1 202-555-0142</code></dd>
-          <dt>Hangar API authorization</dt><dd><code>Basic cjJkMjpERU1PLU5PVC1BLVJFQUwtU0VDUkVU</code></dd>
-        </dl>
-      </details>
+      <section class="refund-task" aria-labelledby="refund-task-title">
+        <p class="redaction-label">The task</p>
+        <h2 id="refund-task-title">Summarize Han Solo’s refund request.</h2>
+        <div class="refund-context"><strong>THB 1,250</strong><span>Millennium Falcon parking fee</span></div>
+        <p>The AI needs the amount and reason. It does not need the payment card, personal contact details or API credential.</p>
+        <details id="redaction-input" class="refund-request">
+          <summary>View the full request · 4 synthetic sensitive values</summary>
+          <pre id="refund-request-body"></pre>
+          <p class="redaction-label">Highlighted values are synthetic test data. Both buttons send this same request.</p>
+        </details>
+      </section>
+      <div class="comparison-heading"><h2>What actually reaches the model?</h2><p>Run each route to compare the input and the AI’s answer.</p></div>
       <div class="redaction-actions" aria-label="Demo steps">
         <button id="redaction-original" type="button">1. Send without Gateway</button>
         <button id="redaction-send" type="button">2. Send through Gateway</button>
@@ -37,19 +40,21 @@
       </div>
 
       <div class="redaction-comparison">
-        <section class="redaction-panel" aria-labelledby="redaction-direct">
+        <section class="redaction-panel result-panel" aria-labelledby="redaction-direct">
           <h2 id="redaction-direct">Without Gateway</h2>
-          <p class="redaction-label">Live · Cloudflare Workers AI</p>
-          <div id="redaction-baseline-result" aria-live="polite"><p>Send the original request directly to the model.</p></div>
+          <p class="redaction-label">App → Workers AI</p>
+          <div id="redaction-baseline-result" aria-live="polite"><div class="result-waiting"><strong>Step 1 · Send the original request</strong><p>See which sensitive values are submitted to AI without Gateway inspection.</p></div></div>
         </section>
-        <section class="redaction-panel" aria-labelledby="redaction-gateway">
+        <section class="redaction-panel result-panel" aria-labelledby="redaction-gateway">
           <h2 id="redaction-gateway">With Gateway</h2>
-          <p class="redaction-label">Live · Gateway → Cloudflare Workers AI</p>
+          <p class="redaction-label">App → AI Gateway → Workers AI</p>
           <div id="redaction-result" aria-live="polite">
-            <p>Send the synthetic request to see how the Gateway handles it.</p>
+            <div class="result-waiting"><strong>Step 2 · Test Gateway masking</strong><p>See whether the sensitive values are masked and the AI can still summarize the refund.</p></div>
           </div>
         </section>
       </div>
+
+      <section id="comparison-takeaway" class="comparison-takeaway" aria-live="polite" hidden></section>
 
       <section id="redaction-debug" class="redaction-panel redaction-debug" aria-labelledby="redaction-debug-title" hidden>
         <div class="debug-heading">

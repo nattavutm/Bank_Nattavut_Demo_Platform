@@ -1,6 +1,6 @@
 import { requestTemplate } from "./fixture.js";
 import { fixtureFields, fixtureBody } from "./fixture.js";
-import { inspectRedaction } from "./observation.js";
+import { describeRedaction, comparisonTakeaway } from "./presentation.js";
 import { mountMaskExplainer } from "./mask-explainer.js";
 const page = document.querySelector("#lr-app");
 const destroy = mountMaskExplainer(document.querySelector("#mask-explainer"));
@@ -13,6 +13,16 @@ const panels = { direct: document.querySelector("#redaction-baseline-result"), g
 const debug = document.querySelector("#redaction-debug"), toggle = document.querySelector("#redaction-debug-toggle");
 const copy = document.querySelector("#debug-copy"), timeline = document.querySelector("#debug-timeline");
 const labels = fixtureFields.map(f => f.label);
+const displayLabels = ['Payment card', 'Contact email', 'Phone number', 'API credential'];
+const inputBody = document.querySelector('#refund-request-body');
+let cursor = 0;
+for (const field of fixtureFields) {
+  const offset = fixtureBody.indexOf(field.value, cursor);
+  inputBody.append(document.createTextNode(fixtureBody.slice(cursor, offset)));
+  const mark = document.createElement('mark'); mark.textContent = field.value; inputBody.append(mark);
+  cursor = offset + field.value.length;
+}
+inputBody.append(document.createTextNode(fixtureBody.slice(cursor)));
 const runs = { direct: null, gateway: null };
 let selected = "gateway";
 document.querySelector("#debug-local").hidden = !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
@@ -32,7 +42,10 @@ function paragraph(target, text, className) {
   if (className) p.className = className;
   target.append(p); return p;
 }
-function show(mode, text) { panels[mode].replaceChildren(); paragraph(panels[mode], text); }
+function show(mode, text) {
+  panels[mode].replaceChildren(); const status = paragraph(panels[mode], text, 'result-waiting');
+  status.dataset.state = runs[mode]?.status === 'Failed' ? 'failed' : 'pending';
+}
 function renderDebug() {
   const run = runs[selected], result = run?.result, unavailable = "Not available";
   document.querySelector("#debug-state").textContent = (selected === "direct" ? "Without Gateway" : "With Gateway") + " · " + (run?.status || "Not started");
@@ -67,32 +80,48 @@ copy.addEventListener("click", async () => {
   catch { copy.textContent = "Copy unavailable"; }
   setTimeout(() => { copy.textContent = "Copy diagnostics"; }, 1800);
 });
+function renderComparison() {
+  const takeaway = document.querySelector('#comparison-takeaway');
+  const content = comparisonTakeaway(runs.direct, runs.gateway);
+  takeaway.hidden = !content; takeaway.replaceChildren();
+  if (content) {
+    const heading = document.createElement('h2'); heading.textContent = content.title; takeaway.append(heading);
+    paragraph(takeaway, content.text);
+  }
+}
 function renderResult(mode, result) {
   const panel = panels[mode]; panel.replaceChildren();
-  const masked = result.fields.filter(f => f === "masked").length;
-  paragraph(panel, result.gatewayErrorCode === "policy_violation" ? `Blocked by Gateway · HTTP ${result.responseStatus}`
-    : result.modelMode === "live" ? (mode === "direct" ? `Original request delivered · HTTP ${result.responseStatus}`
-      : `${masked} of 4 values masked · HTTP ${result.responseStatus}`)
-      : `Live inference not confirmed · HTTP ${result.responseStatus}`, "redaction-outcome");
+  const view = describeRedaction(mode, result);
+  const outcome = document.createElement('div'); outcome.className = 'result-verdict'; outcome.dataset.tone = view.tone;
+  const headline = document.createElement('h3'); headline.textContent = view.title; outcome.append(headline);
+  paragraph(outcome, view.detail); panel.append(outcome);
+  const heading = document.createElement('h3'); heading.className = 'result-section-title'; heading.textContent = 'Input received by the model'; panel.append(heading);
   if (result.receivedText) {
-    const observed = inspectRedaction(fixtureBody, result.receivedText, fixtureFields);
-    const dl = document.createElement("dl"); dl.className = "redaction-values";
-    labels.forEach((label, i) => {
-      const dt = document.createElement("dt"), dd = document.createElement("dd"), code = document.createElement("code");
-      dt.textContent = label; code.textContent = observed.fieldValues[i] || "Not confirmed";
-      dd.dataset.state = observed.fields[i]; dd.append(code); dl.append(dt, dd);
-    });
-    panel.append(dl);
-    const details = document.createElement("details"), heading = document.createElement("summary"), text = document.createElement("pre");
-    details.className = "redaction-received"; heading.textContent = "Input submitted to Workers AI";
-    text.textContent = result.receivedText; details.append(heading, text); panel.append(details);
+    const dl = document.createElement('dl'); dl.className = 'redaction-values';
+    displayLabels.forEach((label, i) => {
+      const row = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'), code = document.createElement('code'), state = document.createElement('span');
+      dt.textContent = label; code.textContent = view.fieldValues[i] || 'Not confirmed';
+      code.title = view.fieldValues[i] || 'No verified value';
+      dd.dataset.state = view.fields[i]; state.className = 'value-state';
+      state.textContent = view.fields[i] === 'masked' ? 'Masked' : view.fields[i] === 'unmasked' ? 'Original value' : 'Unconfirmed';
+      dd.append(code, state); row.append(dt, dd); dl.append(row);
+    }); panel.append(dl);
+  } else paragraph(panel, 'No verified model-input receipt is available for this run.', 'redaction-label');
+  const response = document.createElement('section'); response.className = 'refund-answer';
+  const responseTitle = document.createElement('h3'); responseTitle.textContent = 'AI refund summary'; response.append(responseTitle);
+  if (result.reply) paragraph(response, result.reply, 'redaction-model-response');
+  else paragraph(response, 'No model answer was returned.', 'redaction-label');
+  const check = paragraph(response, view.taskPreserved ? 'Task check: THB 1,250 + parking fee retained' : 'Task check: refund amount and purpose not confirmed', 'refund-task-check');
+  check.dataset.preserved = String(view.taskPreserved); panel.append(response);
+  const details = document.createElement('details'), summary = document.createElement('summary');
+  details.className = 'redaction-received'; summary.textContent = 'View request evidence'; details.append(summary);
+  paragraph(details, `HTTP ${result.responseStatus} · ${result.model || 'Model not confirmed'}`, 'redaction-label');
+  if (result.gatewayRequestId) paragraph(details, 'Gateway request ID ' + result.gatewayRequestId, 'redaction-label');
+  if (result.receivedText) {
+    paragraph(details, 'Exact input submitted to Workers AI', 'redaction-label');
+    const text = document.createElement('pre'); text.textContent = result.receivedText; details.append(text);
   }
-  if (result.reply) {
-    const heading = document.createElement("h3"); heading.textContent = "Model response"; panel.append(heading);
-    paragraph(panel, result.reply, "redaction-model-response");
-    paragraph(panel, result.model, "redaction-label");
-  }
-  if (result.gatewayRequestId) paragraph(panel, "Gateway request ID " + result.gatewayRequestId, "redaction-label");
+  panel.append(details); renderComparison();
 }
 async function responseJson(response) {
   const data = await response.json().catch(() => null);
@@ -101,9 +130,9 @@ async function responseJson(response) {
 }
 async function start(mode) {
   direct.disabled = gateway.disabled = true; selected = mode;
-  document.querySelector("#redaction-input").open = true;
   const run = runs[mode] = { mode, status: "Submitting", id: null, started: new Date().toISOString(), elapsedMs: null, result: null, timeline: [] };
   const trace = message => { run.timeline.push({ elapsedMs: Date.now() - Date.parse(run.started), message }); renderDebug(); };
+  renderComparison();
   show(mode, "In progress · Sending the live request…"); trace("Submitted a fresh fixed-fixture inference job.");
   try {
     const queued = await responseJson(await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode }) }));
