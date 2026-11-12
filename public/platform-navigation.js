@@ -18,6 +18,7 @@
       items: [
         {name: 'Check Status, Prevent Database Deletion', route:'#gateway/database-deletion'},
         {name: 'Mask Sensitive Data Before Inference', route:'#gateway/card-redaction'},
+        {name: 'Primary Model Fails, App Keeps Responding', route:'#gateway/model-fallback'},
       ],
     },
     { id: "insights", name: "AI Risk Insights", direct: true, tbd: true },
