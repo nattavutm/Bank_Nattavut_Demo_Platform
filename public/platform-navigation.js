@@ -15,6 +15,7 @@
       id: "gateway",
       name: "AI Gateway",
       preview: true,
+      overview: {name: "Architecture Overview", route: "#gateway/architecture"},
       groups: [
         {
           name: "Access Control",
@@ -56,7 +57,7 @@
         ? `<a href="#${m.id}" class="nav-link" data-page="${m.id}">${m.name}${m.tbd ? '<small class="nav-tbd">TBD</small>' : ""}</a>`
         : `<div class="platform-navigation" data-module="${m.id}">
     <button class="nav-link platform-trigger" data-page="${m.id}" aria-expanded="false" aria-controls="platform-panel-${m.id}">${m.name}${m.preview ? '<small class="nav-preview">Preview</small>' : ""}</button>
-    <div id="platform-panel-${m.id}" class="platform-dropdown" hidden><nav aria-label="${m.name} navigation">${m.groups ? m.groups.map((g, index) => `<section class="platform-group"><button class="platform-category" aria-expanded="false" aria-controls="platform-child-${m.id}-${index}">${escapeHtml(g.name)}<span aria-hidden="true">›</span></button><div id="platform-child-${m.id}-${index}" class="platform-submenu" hidden><nav aria-label="${escapeHtml(g.name)} use cases">${links(g.items)}</nav></div></section>`).join("") : links(m.items)}</nav></div>
+    <div id="platform-panel-${m.id}" class="platform-dropdown" hidden><nav aria-label="${m.name} navigation">${m.overview ? '<div class="platform-overview">'+links([m.overview])+'</div>' : ""}${m.groups ? m.groups.map((g, index) => `<section class="platform-group"><button class="platform-category" aria-expanded="false" aria-controls="platform-child-${m.id}-${index}">${escapeHtml(g.name)}<span aria-hidden="true">›</span></button><div id="platform-child-${m.id}-${index}" class="platform-submenu" hidden><nav aria-label="${escapeHtml(g.name)} use cases">${links(g.items)}</nav></div></section>`).join("") : links(m.items)}</nav></div>
   </div>`,
     )
     .join("");

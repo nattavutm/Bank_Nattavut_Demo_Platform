@@ -112,7 +112,7 @@ export default {async fetch(request,env){
   const response = path === '/api/gateway/redaction' || path.startsWith('/api/gateway/redaction/')
     ? await redactionApi(request, env)
     : path.startsWith('/api/gateway/') ? json({error:'This archived Gateway use case has been retired.'},410) : await app.fetch(request, env);
-  const gatewayView = ['/gateway/email/','/gateway/email/index.html','/gateway/models/','/gateway/models/index.html','/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html','/gateway/database/','/gateway/database/index.html','/gateway/fallback/','/gateway/fallback/index.html','/gateway/invoice/','/gateway/invoice/index.html'].includes(path);
+  const gatewayView = ['/gateway/architecture/','/gateway/architecture/index.html','/gateway/email/','/gateway/email/index.html','/gateway/models/','/gateway/models/index.html','/gateway/', '/gateway/index.html', '/gateway/redaction/', '/gateway/redaction/index.html','/gateway/database/','/gateway/database/index.html','/gateway/fallback/','/gateway/fallback/index.html','/gateway/invoice/','/gateway/invoice/index.html'].includes(path);
   const headers = new Headers(response.headers);
   headers.set('Cache-Control', 'no-store');
   headers.set('X-Frame-Options', gatewayView ? 'SAMEORIGIN' : 'DENY');

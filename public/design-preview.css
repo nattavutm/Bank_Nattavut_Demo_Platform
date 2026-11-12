@@ -46,3 +46,5 @@ dialog{background:var(--tone-141414, #141414);color:var(--tone-eeeeee, #eee);bor
 #navigation .nav-preview{font-size:7px;color:var(--tone-7e7e7e, #7e7e7e);letter-spacing:.02em;border:0;padding:0}.gateway-frame{display:block;border:0;width:100%;min-height:600px;background:var(--tone-0b0b0b, #0b0b0b)}.gateway-view #main{padding:18px 10px 0!important}
 @media(max-width:720px),(max-height:620px){.platform-dropdown{position:fixed;left:16px!important;right:16px!important;top:120px;width:auto;max-height:calc(100dvh - 140px);overflow:auto}.platform-submenu,.platform-group.flyout-left .platform-submenu{position:static;width:auto;margin:3px 0 10px 10px;max-height:48dvh;border-radius:13px;box-shadow:none;background:var(--tone-141414, #141414)}.platform-group::after{display:none}.platform-category[aria-expanded=true]>span{transform:rotate(90deg)}}
 @media(min-width:721px) and (max-height:620px){.platform-dropdown{top:76px;max-width:420px;max-height:calc(100dvh - 90px)}}
+
+.platform-overview{padding-bottom:9px;margin-bottom:8px;border-bottom:1px solid var(--tone-353535,#353535)}
