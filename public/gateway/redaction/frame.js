@@ -1,6 +1,6 @@
 import { requestTemplate } from "./fixture.js";
 import { fixtureFields, fixtureBody } from "./fixture.js";
-import { describeRedaction, comparisonTakeaway } from "./presentation.js";
+import { describeRedaction, comparisonTakeaway, comparisonModes } from "./presentation.js";
 import { mountMaskExplainer } from "./mask-explainer.js";
 const page = document.querySelector("#lr-app");
 const destroy = mountMaskExplainer(document.querySelector("#mask-explainer"));
@@ -13,7 +13,6 @@ const panels = { direct: document.querySelector("#redaction-baseline-result"), g
 const debug = document.querySelector("#redaction-debug"), toggle = document.querySelector("#redaction-debug-toggle");
 const copy = document.querySelector("#debug-copy"), timeline = document.querySelector("#debug-timeline");
 const labels = fixtureFields.map(f => f.label);
-const displayLabels = ['Payment card', 'Contact email', 'Phone number', 'API credential'];
 const inputBody = document.querySelector('#refund-request-body');
 let cursor = 0;
 for (const field of fixtureFields) {
@@ -95,17 +94,11 @@ function renderResult(mode, result) {
   const outcome = document.createElement('div'); outcome.className = 'result-verdict'; outcome.dataset.tone = view.tone;
   const headline = document.createElement('h3'); headline.textContent = view.title; outcome.append(headline);
   paragraph(outcome, view.detail); panel.append(outcome);
-  const heading = document.createElement('h3'); heading.className = 'result-section-title'; heading.textContent = 'Input received by the model'; panel.append(heading);
-  if (result.receivedText) {
-    const dl = document.createElement('dl'); dl.className = 'redaction-values';
-    displayLabels.forEach((label, i) => {
-      const row = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'), code = document.createElement('code'), state = document.createElement('span');
-      dt.textContent = label; code.textContent = view.fieldValues[i] || 'Not confirmed';
-      code.title = view.fieldValues[i] || 'No verified value';
-      dd.dataset.state = view.fields[i]; state.className = 'value-state';
-      state.textContent = view.fields[i] === 'masked' ? 'Masked' : view.fields[i] === 'unmasked' ? 'Original value' : 'Unconfirmed';
-      dd.append(code, state); row.append(dt, dd); dl.append(row);
-    }); panel.append(dl);
+  const heading = document.createElement('h3'); heading.className = 'result-section-title'; heading.textContent = 'Raw input received by the model'; panel.append(heading);
+  if (view.receivedText) {
+    const raw = document.createElement('pre'); raw.className = 'redaction-raw-input';
+    raw.dataset.mode = mode; raw.textContent = view.receivedText;
+    panel.append(raw);
   } else paragraph(panel, 'No verified model-input receipt is available for this run.', 'redaction-label');
   const response = document.createElement('section'); response.className = 'refund-answer';
   const responseTitle = document.createElement('h3'); responseTitle.textContent = 'AI refund summary'; response.append(responseTitle);
@@ -117,10 +110,6 @@ function renderResult(mode, result) {
   details.className = 'redaction-received'; summary.textContent = 'View request evidence'; details.append(summary);
   paragraph(details, `HTTP ${result.responseStatus} · ${result.model || 'Model not confirmed'}`, 'redaction-label');
   if (result.gatewayRequestId) paragraph(details, 'Gateway request ID ' + result.gatewayRequestId, 'redaction-label');
-  if (result.receivedText) {
-    paragraph(details, 'Exact input submitted to Workers AI', 'redaction-label');
-    const text = document.createElement('pre'); text.textContent = result.receivedText; details.append(text);
-  }
   panel.append(details); renderComparison();
 }
 async function responseJson(response) {
@@ -128,8 +117,8 @@ async function responseJson(response) {
   if (!response.ok) throw new Error(data?.error || "The live demo could not be reached.");
   return data;
 }
-async function start(mode) {
-  direct.disabled = gateway.disabled = true; selected = mode;
+async function sendRoute(mode) {
+  selected = mode;
   const run = runs[mode] = { mode, status: "Submitting", id: null, started: new Date().toISOString(), elapsedMs: null, result: null, timeline: [] };
   const trace = message => { run.timeline.push({ elapsedMs: Date.now() - Date.parse(run.started), message }); renderDebug(); };
   renderComparison();
@@ -154,7 +143,17 @@ async function start(mode) {
     }
     throw new Error("This run timed out. Reload before starting another test.");
   } catch (error) { run.status = "Failed"; show(mode, error.message); trace("No successful outcome is confirmed."); }
-  finally { run.elapsedMs = Date.now() - Date.parse(run.started); direct.disabled = gateway.disabled = false; renderDebug(); }
+  finally { run.elapsedMs = Date.now() - Date.parse(run.started); renderDebug(); }
+}
+let busy = false;
+async function start(mode) {
+  if (busy) return;
+  busy = true; direct.disabled = gateway.disabled = true;
+  try {
+    const modes = comparisonModes(mode, runs.direct);
+    if (modes.length > 1) show('gateway', 'In progress · Running Without Gateway first, then sending through Gateway…');
+    for (const route of modes) await sendRoute(route);
+  } finally { busy = false; direct.disabled = gateway.disabled = false; }
 }
 direct.addEventListener("click", () => start("direct"));
 gateway.addEventListener("click", () => start("gateway"));

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixtureBody, fixtureFields } from '../public/gateway/redaction/fixture.js';
-import { describeRedaction, comparisonTakeaway } from '../public/gateway/redaction/presentation.js';
+import { describeRedaction, comparisonTakeaway, comparisonModes } from '../public/gateway/redaction/presentation.js';
 const masked = fixtureFields.reduce((body, f) => body.replace(f.value, '[REDACTED]'), fixtureBody);
 const result = receivedText => ({receivedText, responseStatus:200, modelMode:'live', modelStatus:'completed', reply:'THB 1,250 for the Millennium Falcon parking fee.', summaryPreserved:true});
 const run = receivedText => ({status:'Completed', result:result(receivedText)});
@@ -27,4 +27,15 @@ test('comparison requires both completed live runs and distinguishes masking fro
  const changed=run(masked);changed.result.summaryPreserved=false;
  assert.equal(describeRedaction('gateway',changed.result).taskPreserved,false);
  assert.doesNotMatch(comparisonTakeaway(run(fixtureBody),changed).title,/task still works/);
+});
+
+test('Gateway-first requests get a real baseline and never reuse failed or unverified results',()=>{
+ assert.deepEqual(comparisonModes('gateway',null),['direct','gateway']);
+ assert.deepEqual(comparisonModes('gateway',run(fixtureBody)),['gateway']);
+ assert.deepEqual(comparisonModes('gateway',{...run(fixtureBody),status:'Failed'}),['direct','gateway']);
+ const simulated=run(fixtureBody);simulated.result.modelMode='fixture';
+ assert.deepEqual(comparisonModes('gateway',simulated),['direct','gateway']);
+ assert.deepEqual(comparisonModes('gateway',run(masked)),['direct','gateway']);
+ assert.deepEqual(comparisonModes('direct',null),['direct']);
+ assert.throws(()=>comparisonModes('other',null));
 });

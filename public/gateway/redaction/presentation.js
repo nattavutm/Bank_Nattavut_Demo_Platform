@@ -38,3 +38,11 @@ export function comparisonTakeaway(direct, gateway) {
     ? { title: 'Less sensitive data. The refund task still works.', text: 'Without Gateway, AI received all 4 original values. With Gateway, all 4 were masked. Both summaries retained THB 1,250 and the Millennium Falcon parking fee.' }
     : { title: 'All 4 sensitive values were masked.', text: 'Masking is confirmed at the model input. Review the generated summaries: the refund amount and purpose were not confirmed in both answers.' };
 }
+
+// A Gateway-first click must also obtain a real direct baseline, not a fixture.
+export function comparisonModes(mode, direct) {
+  if (mode !== 'direct' && mode !== 'gateway') throw new Error('Unknown comparison route');
+  const before = describeRedaction('direct', direct?.result);
+  return mode === 'gateway' && !(direct?.status === 'Completed' && before.live && before.visible === fixtureFields.length)
+    ? ['direct', 'gateway'] : [mode];
+}

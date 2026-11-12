@@ -227,3 +227,13 @@
   .redaction .comparison-heading h2 { font-size: 25px; }
   .redaction-values code { font-size: 14px; }
 }
+
+.redaction-raw-input {
+  margin: 0; padding: 18px; min-height: 245px;
+  background: var(--tone-101010, #101010); border: 1px solid var(--tone-333333, #333);
+  border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 14px/1.9 ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: var(--tone-e7b7ac, #e7b7ac);
+}
+.redaction-raw-input[data-mode='gateway'] { color: var(--tone-c8d8cf, #c8d8cf); }
+@media (max-width: 760px) { .redaction-raw-input { min-height: 0; font-size: 13px; padding: 16px; } }
