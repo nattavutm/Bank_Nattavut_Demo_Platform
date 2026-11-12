@@ -48,6 +48,11 @@
       "binding": "AI_GATEWAY",
       "service_id": "01a1cddf-0fae-70f0-8ae4-9b241c187905",
       "remote": true
+    },
+    {
+      "binding": "AI_GATEWAY_MCP",
+      "service_id": "01a1cf42-b305-7890-95a3-860adb394362",
+      "remote": true
     }
   ]
 }
