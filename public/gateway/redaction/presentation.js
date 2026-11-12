@@ -1,9 +1,13 @@
-import { fixtureBody, fixtureFields } from './fixture.js';
+import { fixtureBody } from './fixture.js';
+import { promptContext } from './prompt.js';
 import { inspectRedaction } from './observation.js';
 
 // Describe observed model input, independently of any expected policy result.
 export function describeRedaction(mode, result) {
-  const observation = inspectRedaction(fixtureBody, result?.receivedText, fixtureFields);
+  const original = result?.originalText ?? fixtureBody;
+  const context = promptContext(original);
+  const total = context.fields.length;
+  const observation = inspectRedaction(original, result?.receivedText, context.fields);
   const masked = observation.fields.filter(state => state === 'masked').length;
   const visible = observation.fields.filter(state => state === 'unmasked').length;
   const confirmed = masked + visible;
@@ -14,35 +18,27 @@ export function describeRedaction(mode, result) {
   if (blocked) {
     title = 'Gateway denied this request';
     detail = 'This run did not demonstrate masking and successful delivery.'; tone = 'warning';
-  } else if (live && confirmed === fixtureFields.length) {
-    if (masked === fixtureFields.length) {
-      title = 'Sensitive data masked before AI'; detail = `${masked} of ${fixtureFields.length} sensitive values replaced by redaction markers.`; tone = 'protected';
-    } else if (visible === fixtureFields.length) {
-      title = 'Sensitive data reached AI'; detail = `All ${visible} original values were submitted to the model.`; tone = 'exposed';
+  } else if (live && total > 0 && confirmed === total) {
+    if (masked === total) {
+      title = 'Sensitive data masked before AI'; detail = `${masked} of ${total} tracked sensitive values replaced by redaction markers.`; tone = 'protected';
+    } else if (visible === total) {
+      title = 'Sensitive data reached AI'; detail = `All ${visible} tracked original values were submitted to the model.`; tone = 'exposed';
     } else {
       title = 'Some sensitive data still reached AI'; detail = `${masked} masked · ${visible} unchanged. Review the values below.`; tone = 'warning';
     }
   } else if (live) {
-    title = 'AI responded; masking is not confirmed';
-    detail = 'The received input does not establish the state of every sensitive value.'; tone = 'warning';
+    title = total ? 'AI responded; masking is not confirmed' : 'AI response received';
+    detail = total ? 'The received input does not establish the state of every tracked value.' : 'No labelled demo fields were found. Compare the raw inputs to inspect any changes.'; tone = total ? 'warning' : 'neutral';
   }
-  return { ...observation, masked, visible, confirmed, live, blocked, title, detail, tone,
-    taskPreserved: live && result.summaryPreserved === true };
+  return { ...observation, total, task: context.task, originalText: original, masked, visible, confirmed, live, blocked, title, detail, tone,
+    taskPreserved: context.task ? live && result.summaryPreserved === true : null };
 }
 
 export function comparisonTakeaway(direct, gateway) {
   if (direct?.status !== 'Completed' || gateway?.status !== 'Completed') return null;
   const before = describeRedaction('direct', direct.result), after = describeRedaction('gateway', gateway.result);
-  if (!before.live || !after.live || before.visible !== fixtureFields.length || after.masked !== fixtureFields.length) return null;
+  if (!before.live || !after.live || !before.total || before.originalText !== after.originalText || before.visible !== before.total || after.masked !== after.total) return null;
   return after.taskPreserved && before.taskPreserved
-    ? { title: 'Less sensitive data. The refund task still works.', text: 'Without Gateway, AI received all 4 original values. With Gateway, all 4 were masked. Both summaries retained THB 1,250 and the Millennium Falcon parking fee.' }
-    : { title: 'All 4 sensitive values were masked.', text: 'Masking is confirmed at the model input. Review the generated summaries: the refund amount and purpose were not confirmed in both answers.' };
-}
-
-// A Gateway-first click must also obtain a real direct baseline, not a fixture.
-export function comparisonModes(mode, direct) {
-  if (mode !== 'direct' && mode !== 'gateway') throw new Error('Unknown comparison route');
-  const before = describeRedaction('direct', direct?.result);
-  return mode === 'gateway' && !(direct?.status === 'Completed' && before.live && before.visible === fixtureFields.length)
-    ? ['direct', 'gateway'] : [mode];
+    ? { title: 'Less sensitive data. The refund task still works.', text: `Without Gateway, AI received all ${before.total} tracked original values. With Gateway, all ${after.total} were masked. Both summaries retained ${before.task.currency} ${before.task.amount} and ${before.task.purpose}.` }
+    : { title: `All ${after.total} tracked sensitive values were masked.`, text: 'Masking is confirmed at the model input. Review the generated summaries; the task check was not confirmed in both answers.' };
 }

@@ -237,3 +237,24 @@
 }
 .redaction-raw-input[data-mode='gateway'] { color: var(--tone-c8d8cf, #c8d8cf); }
 @media (max-width: 760px) { .redaction-raw-input { min-height: 0; font-size: 13px; padding: 16px; } }
+
+/* Shared-prompt composer, matching the AI Guard comparison interaction. */
+.refund-composer { margin: 40px 0 24px; }
+.refund-composer-tools { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin: 0 0 16px; }
+.refund-composer-tools > span { color: var(--tone-aaaaaa, #aaa); font-size: 15px; }
+.refund-composer-tools > div { display: flex; align-items: center; gap: 10px; }
+.refund-composer-tools button { padding: 10px 16px; border: 1px solid var(--tone-333333, #333); border-radius: 12px; color: var(--tone-bcbcbc, #bcbcbc); }
+.refund-composer-tools button:hover { background: var(--tone-242424, #242424); }
+.refund-prompt-wrap { position: relative; background: var(--accent-surface); border: 1px solid var(--accent); border-radius: 26px; overflow: hidden; }
+.refund-prompt-wrap:focus-within { border-color: var(--accent-focus); }
+.redaction .refund-prompt-wrap textarea { display: block; width: 100%; min-height: 280px; padding: 25px 88px 25px 28px; margin: 0; border: 0; border-radius: 26px; background: transparent; color: var(--tone-e4e4e4, #e4e4e4); font: inherit; font-size: 19px; line-height: 1.8; resize: vertical; }
+.redaction .refund-prompt-wrap textarea:focus-visible { outline: 0; }
+.redaction .refund-prompt-wrap #redaction-send { position: absolute; right: 18px; bottom: 18px; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 13px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; }
+.refund-prompt-wrap #redaction-send svg { width: 22px; height: 22px; }
+.refund-composer-help { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin: 10px 4px 0; color: var(--tone-929292, #929292); font-size: 12px; }
+#prompt-error { color: var(--tone-e7b7ac, #e7b7ac); font-size: 14px; }
+@media (max-width: 760px) {
+  .refund-composer-tools { align-items: flex-start; flex-wrap: wrap; }
+  .refund-composer-tools > div { margin-left: auto; }
+  .redaction .refund-prompt-wrap textarea { font-size: 16px; min-height: 330px; padding: 20px 20px 78px; }
+}

@@ -180,3 +180,48 @@ test("a real generated answer that changes THB to credits is not marked as prese
     assert.ok(job.result.reply.includes("credits"), "the app must display the actual response, not repair it into a fake success");
   } finally { t.sqlite.close(); }
 });
+
+test('edited prompts are snapshotted server-side and reach both routes with matching dynamic evidence',async()=>{
+ const t=setup();
+ try {
+  t.env.REDACTION_EXECUTION='cloudflare';t.env.GATEWAY_DEMO_VIRTUAL_KEY='test-only-virtual-key';
+  const prompt=fixtureBody.replace('1,250','2,500').replace('leia.organa@example.com','luke.skywalker@example.com');
+  const masked=prompt.replace('4111 1111 1111 1111','[REDACTED]').replace('luke.skywalker@example.com','[REDACTED]').replace('+1 202-555-0142','[REDACTED]').replace(fixtureFields[3].value,'[REDACTED]');
+  const inputs=[];
+  t.env.AI.run=async(model,params)=>{inputs.push(params.messages[1].content);return {response:'A refund of THB 2,500 is requested for the Millennium Falcon parking fee.'};};
+  t.env.AI_GATEWAY={async fetch(url,options){
+   const body=JSON.parse(options.body);assert.equal(body.messages[1].content,prompt);
+   const callback=content=>liveRedactionApi(new Request('https://demo.test/api/gateway/redaction/live/model/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer test-only-upstream'},body:JSON.stringify({...body,messages:[body.messages[0],{role:'user',content}]})
+   }),t.env,true);
+   assert.equal((await callback('An unrelated replacement prompt')).status,400);
+   const response=await callback(masked);assert.equal(response.status,200);
+   const headers=new Headers(response.headers);headers.set('x-request-id',randomUUID());return new Response(response.body,{status:200,headers});
+  }};
+  for(const mode of ['direct','gateway']){
+   const created=await t.browser('','POST',{mode,prompt});assert.equal(created.status,202);
+   const {id}=await created.json();const {result}=await (await t.browser('/'+id)).json();
+   assert.equal(result.originalText,prompt);assert.equal(result.receivedText,mode==='direct'?prompt:masked);
+   assert.deepEqual(result.fields,Array(4).fill(mode==='direct'?'unmasked':'masked'));
+   assert.equal(result.summaryPreserved,true);assert.equal(result.task.amount,'2,500');
+   assert.equal((await t.browser('/'+id,'GET',undefined,'other-owner')).status,404);
+  }
+  assert.deepEqual(inputs,[prompt,masked]);
+ }finally{t.sqlite.close();}
+});
+
+test('editable prompts remain bounded and cannot select destinations, models or trusted identity',async()=>{
+ const t=setup();
+ try{
+  t.env.REDACTION_EXECUTION='cloudflare';
+  for(const body of [{mode:'direct',prompt:''},{mode:'direct',prompt:'   '},{mode:'direct',prompt:123},{mode:'direct',prompt:'x'.repeat(4001)},
+   {mode:'direct',prompt:'test',model:'other'},{mode:'direct',prompt:'test',endpoint:'https://other.test'},{mode:'direct',prompt:'test',owner:'other'}]){
+   assert.equal((await t.browser('','POST',body)).status,400);
+  }
+  const prompt='Explain lightsabers. สรุปสั้น ๆ';
+  const {id}=await (await t.browser('','POST',{mode:'direct',prompt})).json();
+  const job=await (await t.browser('/'+id)).json();
+  assert.equal(job.result.originalText,prompt);assert.equal(t.calls[0].params.messages[1].content,prompt);
+  assert.deepEqual(job.result.fields,[]);assert.equal(job.result.summaryPreserved,null);assert.equal(job.result.task,null);
+ }finally{t.sqlite.close();}
+});

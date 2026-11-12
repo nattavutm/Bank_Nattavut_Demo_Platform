@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixtureBody, fixtureFields } from '../public/gateway/redaction/fixture.js';
-import { describeRedaction, comparisonTakeaway, comparisonModes } from '../public/gateway/redaction/presentation.js';
+import { describeRedaction, comparisonTakeaway } from '../public/gateway/redaction/presentation.js';
 const masked = fixtureFields.reduce((body, f) => body.replace(f.value, '[REDACTED]'), fixtureBody);
 const result = receivedText => ({receivedText, responseStatus:200, modelMode:'live', modelStatus:'completed', reply:'THB 1,250 for the Millennium Falcon parking fee.', summaryPreserved:true});
 const run = receivedText => ({status:'Completed', result:result(receivedText)});
@@ -29,13 +29,14 @@ test('comparison requires both completed live runs and distinguishes masking fro
  assert.doesNotMatch(comparisonTakeaway(run(fixtureBody),changed).title,/task still works/);
 });
 
-test('Gateway-first requests get a real baseline and never reuse failed or unverified results',()=>{
- assert.deepEqual(comparisonModes('gateway',null),['direct','gateway']);
- assert.deepEqual(comparisonModes('gateway',run(fixtureBody)),['gateway']);
- assert.deepEqual(comparisonModes('gateway',{...run(fixtureBody),status:'Failed'}),['direct','gateway']);
- const simulated=run(fixtureBody);simulated.result.modelMode='fixture';
- assert.deepEqual(comparisonModes('gateway',simulated),['direct','gateway']);
- assert.deepEqual(comparisonModes('gateway',run(masked)),['direct','gateway']);
- assert.deepEqual(comparisonModes('direct',null),['direct']);
- assert.throws(()=>comparisonModes('other',null));
+test('edited prompts cannot reuse a different prompt’s result or fixed field totals',()=>{
+ const edited=fixtureBody.replace('1,250','2,500').replace('leia.organa@example.com','luke.skywalker@example.com');
+ const editedMasked=fixtureFields.reduce((text,f)=>text.replace(f.value==='leia.organa@example.com'?'luke.skywalker@example.com':f.value,'[REDACTED]'),edited);
+ const before={status:'Completed',result:{...result(edited),originalText:edited}};
+ const after={status:'Completed',result:{...result(editedMasked),originalText:edited}};
+ assert.equal(describeRedaction('gateway',after.result).total,4);
+ assert.match(comparisonTakeaway(before,after).text,/2,500/);
+ assert.equal(comparisonTakeaway(run(fixtureBody),after),null);
+ const custom=describeRedaction('gateway',{...result('Explain lightsabers.'),originalText:'Explain lightsabers.'});
+ assert.equal(custom.total,0);assert.equal(custom.taskPreserved,null);assert.equal(custom.tone,'neutral');
 });
