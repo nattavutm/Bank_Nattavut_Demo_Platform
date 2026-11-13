@@ -1,6 +1,6 @@
 # Architecture Overview — product-level logical flow
 
-Release: product-level walkthrough and shared use-case diagrams, prepared for production publication on 2026-11-13 at `https://demo.nattavut.online/#gateway/architecture`. Publication verification is recorded after deployment.
+Status: published and browser-verified on 2026-11-13 at `https://demo.nattavut.online/#gateway/architecture`. Cloudflare Worker version: `8e99d5ef-e7d2-4546-b3fd-b632e08fabcb`. Release source: `4ee9153`.
 
 This read-only illustration explains TrendAI AI Gateway's product roles. It generates no network requests, model inference, tool execution, live decisions or live Events. The existing executable use-case pages, Gateway configuration and deployment remain unchanged.
 
@@ -57,3 +57,10 @@ Product sources:
 - [TrendAI Gateway Controls](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-AIG-controls)
 - [TrendAI Gateway Resources](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-AIG-resources)
 - [Identity Management](https://docs.trendmicro.com/en-us/documentation/article/trend-vision-one-aig-identity-management)
+
+## Production verification — 2026-11-13
+
+- JavaScript checks and all 137 automated tests passed before publication.
+- Browser login and Overview Next/Restart worked on the custom production domain.
+- All six case routes rendered the shared diagram and Policy / Configuration relationship: Invoice, Database, Email, Model Access, Fallback and Mask Data.
+- These checks verify publication and illustration UI, not a new live Gateway execution or policy test.
