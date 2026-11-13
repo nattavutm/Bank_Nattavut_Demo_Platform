@@ -17,6 +17,8 @@ test("Gateway API and all its assets require the existing platform login", async
     "/api/gateway/data/customers",
     "/gateway/index.html",
     "/gateway/architecture/",
+    "/gateway/product-diagram.js",
+    "/gateway/product-diagram.css",
     "/gateway/architecture/app.js",
     "/gateway/architecture/flows.js",
     "/gateway/app.js",
